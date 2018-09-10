@@ -98,10 +98,8 @@ void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
 		else
 			ssid_len=ssid_len;
 		pos=GetSubStrPos(pdata,"\"ssid\"");
-		for(i=0;i<ssid_len;i++)
-		{
-			ssid[i]=pdata[pos+i+8];
-		}
+
+		os_strncpy(ssid,pdata+pos+8,ssid_len);
 		/****************½ØÈ¡password*********************/
 		pos=GetSubStrPos(pdata,"\"password_len\"");
 		password_len=pdata[pos+15]-'0';
@@ -112,11 +110,8 @@ void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
 		else
 			password_len=password_len;
 		pos=GetSubStrPos(pdata,"\"password\"");
-		for(i=0;i<password_len;i++)
-		{
-			password[i]=pdata[pos+i+12];
-		}
 
+		os_strncpy(password,pdata+pos+12,password_len);
 		 wifi_station_disconnect();
 		 WIFI_Connect(ssid,password,wifiConnectCb);
 

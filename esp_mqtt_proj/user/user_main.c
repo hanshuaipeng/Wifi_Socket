@@ -552,6 +552,9 @@ void socket_timer_callback()
 	static uint8 count=0;
 	for(i=0;i<23;i++)
 	{
+#if time_debug
+		os_printf("timing_timersta[%d]=%s\r\n",i+1,timing_timersta[i+1]);
+#endif
 		if(strstr(timing_timersta[i+1],"on")!=NULL)
 		{
 			count++;
@@ -572,12 +575,16 @@ void socket_timer_callback()
 	}
 	if(count==0)
 	{
+#if time_debug
 		os_printf("no timer is open!!!\r\n");
+#endif
 		os_timer_disarm(&socket_timer);
 	}
 	else
 	{
+#if time_debug
 		os_printf("timer num is:%d\r\n",count);
+#endif
 		count=0;
 	}
 }
@@ -698,7 +705,6 @@ void pub_timer_callback()
 			//{"cmd":"wifi_socket_timing","day":"1234567","ontime":"10:00","offtime":"19:00","timer":1,"timer_state":"on","sid":"12345678"}
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//定时器
 			{
-				os_memset(timing_timersta[timer],0,os_strlen(timing_timersta[timer]));//清空状态缓存，放置on  off出错
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
 				if(mqtt_buff[frist_pos+9]>='0'&&mqtt_buff[frist_pos+9]<='9')
 				{
@@ -719,10 +725,7 @@ void pub_timer_callback()
 						}
 					}
 				}
-#if debug
-				for(i=0;i<timer;i++)
-					os_printf("wifi_socket_timing[%d]=%s\r\n",i+1,wifi_socket_timing[i+1]);
-#endif
+
 				frist_pos=GetSubStrPos(mqtt_buff,"\"day\":");
 				os_strncpy(timing_day[timer],mqtt_buff+frist_pos+7,7);//保存第N个定时的重复的天数
 
@@ -767,7 +770,6 @@ void pub_timer_callback()
 
 				os_sprintf(wifi_socket_timing[timer],"{\"time\":\"%s,%s,%s,%s\",\"timer\":%d}",timing_ontime[timer],
 							timing_offtime[timer],timing_day[timer],timing_timersta[timer],timer);
-
 
 				//获取定时数量，如果大于20个，清空当前的定时，上传超过20
 				if(get_timer()>20)
@@ -1133,7 +1135,7 @@ void to_scan(void)
 			os_strcpy(buff,cache);//将截取到的数据重新拷贝到buff
 			//os_printf("buff=%s\r\n",buff);
 			//os_printf("wifi_socket_timing[%d]=%s\r\n",data,wifi_socket_timing[data]);
-#if 0
+#if time_debug
 			os_printf("timing_ontime[%d]=%s\r\n",data,timing_ontime[data]);
 			os_printf("timing_offtime[%d]=%s\r\n",data,timing_offtime[data]);
 			os_printf("timing_day[%d]=%s\r\n",data,timing_day[data]);
@@ -1176,8 +1178,9 @@ void user_init(void)
 	on_off_flag=1;
 
 	spi_flash_read((CFG_LOCATION + 5) * SPI_FLASH_SEC_SIZE,(uint32 *)list, sizeof(list));
-
-	//os_printf("list=%s\r\n",list);
+#if time_debug
+	os_printf("list=%s\r\n",list);
+#endif
  //检测到连接ip之后连接mqtt
 	check_ip();
 	user_rf_cal_sector_set();
