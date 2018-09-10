@@ -75,6 +75,7 @@ uint8 dev_sid[15];					//记录设备SID
 
 LOCAL os_timer_t onoff_timer;
 uint16 sec=0,min=0;
+uint8 down_flag=0;
 /*************************************
  *定时相关变量
  */
@@ -517,6 +518,12 @@ void onoff_timer_callback()
 	{
 		if(min==0)
 		{
+			if(down_flag==1)
+			{
+				dev_sta=1;
+			}
+			else
+				dev_sta=0;
 			on_off_flag=1;
 			min=0;
 			os_timer_disarm(&onoff_timer);
@@ -565,12 +572,12 @@ void socket_timer_callback()
 	}
 	if(count==0)
 	{
-		//os_printf("no timer is open!!!\r\n");
+		os_printf("no timer is open!!!\r\n");
 		os_timer_disarm(&socket_timer);
 	}
 	else
 	{
-		//os_printf("timer num is:%d\r\n",count);
+		os_printf("timer num is:%d\r\n",count);
 		count=0;
 	}
 }
@@ -637,12 +644,12 @@ void pub_timer_callback()
 
 				if(strstr(mqtt_buff,"\"state\":\"on\"")!=NULL)
 				{
-					dev_sta=1;
+					down_flag=1;
 					os_strcpy(state,"on");
 				}
 				if(strstr(mqtt_buff,"\"state\":\"off\"")!=NULL)
 				{
-					dev_sta=0;
+					down_flag=0;
 					os_strcpy(state,"off");
 				}
 				if(strstr(mqtt_buff,"\"state\":\"cancel\"")!=NULL)
@@ -671,6 +678,12 @@ void pub_timer_callback()
 /****************************获取倒计时状态**********************************/
 			if(strstr(mqtt_buff,"\"wifi_socket_read_down\"")!=NULL)
 			{
+				if(dev_sta==1)
+				{
+					os_strcpy(state,"off");
+				}
+				else
+					os_strcpy(state,"on");
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_read_down_ack\",\"state\":\"%s\",\"data\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",state,min/60,min%60,sec,dev_sid);
 				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 				if(tcp_send==1)
@@ -819,13 +832,13 @@ void pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 
 			}
-	/************************************读开关状态************************************************************/
+/************************************读开关状态************************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read\"")!=NULL)
 			{
 				on_off_flag=1;
 				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 			}
-	/**********************获取IP*************************/
+/**********************获取IP*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_ping\"")!=NULL)
 			{
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
