@@ -26,6 +26,7 @@
 #include "driver/key.h"
 
 #define debug 0
+#define tcp_debug 	1
 #define smartconfig 0
 
 void ICACHE_FLASH_ATTR smartconfig_done(sc_status status, void *pdata);

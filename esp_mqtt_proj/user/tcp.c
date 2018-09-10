@@ -40,7 +40,6 @@ static struct espconn *pTcpServer;
 
 extern uint8 mqtt_buff[200];
 extern uint8 dev_sid[15];
-extern uint8 connect_sta;
 
 
 extern uint8 pub_flag;
@@ -83,13 +82,10 @@ void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
 {
 	static uint8 pos,i,ssid_len,password_len;
 	uint8 ssid[20]={},password[20]={},ack[50]={};
-//#if debug
+#if tcp_debug
     os_printf("收到PC发来的数据：%s\r\n",pdata);//将客户端发过来的数据打印出来
-//endif
-    connect_sta=0;
-    /*os_sprintf(ack,"{\"cmd\":\"wifi_config_ok\",\"sid\":%x,\"connect_sta\":%d}",sid,connect_sta);
-    WIFI_TCP_SendNews(ack,os_strlen(ack));
-*/
+#endif
+
 	if(strstr(pdata,"\"wifi_config\"")!=NULL)
 	{
 		/****************截取ssid*********************/
@@ -120,11 +116,7 @@ void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
 		{
 			password[i]=pdata[pos+i+12];
 		}
-		/*os_memset(ssid_buff,0,os_strlen(ssid_buff));
-		os_memset(password_buff,0,os_strlen(password_buff));
-		os_memcpy(ssid_buff,ssid,os_strlen(ssid));
-		os_memcpy(password_buff,password,os_strlen(password));
-*/
+
 		 wifi_station_disconnect();
 		 WIFI_Connect(ssid,password,wifiConnectCb);
 
@@ -154,9 +146,9 @@ void Tcp_Server_Listen_discon_cb(void *arg)
 {
       struct espconn *pespconn = (struct espconn *) arg;
       linkConType *linkTemp = (linkConType *) pespconn->reverse;
-//#if debug
+#if tcp_debug
       os_printf("连接已经断开\r\n");
-//#endif
+#endif
 }
 /*
  * 函数名:void Tcp_Server_Listen_sent_cb(void *arg)
@@ -166,9 +158,9 @@ void Tcp_Server_Listen_sent_cb(void *arg)
 {
       struct espconn *pespconn = (struct espconn *) arg;
      linkConType *linkTemp = (linkConType *) pespconn->reverse;
-//#if debug
+#if tcp_debug
      os_printf("发送数据成功！！\r\n");
-//#endif
+#endif
 }
 /*
  * 函数名:void TcpServer_Listen_PCon(void *arg)
@@ -188,7 +180,7 @@ void TcpServerListen_PCon(void *arg)
       espconn_regist_reconcb(pespconn, TcpServer_Listen_recon_cb);                      //注册连接监听函数
       espconn_regist_disconcb(pespconn, Tcp_Server_Listen_discon_cb);                   //注册正常断开时监听函数
       espconn_regist_sentcb(pespconn, Tcp_Server_Listen_sent_cb);                       //注册发送成功监听函数
-#if debug
+#if tcp_debug
       os_printf("连接已经成功\r\n");
 #endif
 }
