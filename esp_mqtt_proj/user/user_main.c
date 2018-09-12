@@ -551,22 +551,22 @@ void socket_timer_callback()
 {
 	uint8 i;
 	static uint8 count=0;
-	for(i=0;i<23;i++)
+	for(i=1;i<21;i++)
 	{
 #if time_debug
-		os_printf("timing_timersta[%d]=%s\r\n",i+1,timing_timersta[i+1]);
+		os_printf("timing_timersta[%d]=%s\r\n",i,timing_timersta[i]);
 #endif
-		if(strstr(timing_timersta[i+1],"on")!=NULL)
+		if(strstr(timing_timersta[i],"on")!=NULL)
 		{
 			count++;
-			if(strchr(timing_day[i+1],now_timedate.tm_wday))
+			if(strchr(timing_day[i],now_timedate.tm_wday))
 			{
-				if(strstr(timing_ontime[i+1],now_time)!=NULL&&now_timedate.tm_sec==0)
+				if(strstr(timing_ontime[i],now_time)!=NULL&&now_timedate.tm_sec==0)
 				{
 					on_off_flag=1;
 					dev_sta=1;//时间到，打开
 				}
-				if(strstr(timing_offtime[i+1],now_time)!=NULL&&now_timedate.tm_sec==0)
+				if(strstr(timing_offtime[i],now_time)!=NULL&&now_timedate.tm_sec==0)
 				{
 					on_off_flag=1;
 					dev_sta=0;//时间到，关闭
@@ -596,13 +596,14 @@ void socket_timer_callback()
 uint8 get_timer()
 {
 	uint8 i,count=0;
-	for(i=0;i<24;i++)
+	for(i=1;i<24;i++)
 	{
 		if(strstr(wifi_socket_timing[i],"time")!=NULL)
 		{
 			count++;
 		}
 	}
+	os_printf("count num is:%d\r\n",count);
 	return count;
 }
 /****************************拼定时器列表*************************************************/
@@ -610,7 +611,7 @@ void send_list()
 {
 	uint8 i,count=0;
 	os_sprintf(list,"{\"cmd\":\"wifi_socket_read_timing_ack\",\"sid\":\"%s\",\"data\":[",dev_sid);
-	for(i=0;i<24;i++)
+	for(i=1;i<24;i++)
 	{
 		if(strstr(wifi_socket_timing[i],"time")!=NULL)
 		{
@@ -625,7 +626,7 @@ void send_list()
 	os_printf("%s\n", list);
 #endif
 }
-
+/****************************************收到数据开始处理*******************************************/
 void pub_timer_callback()
 {
 	uint8 frist_pos=0;
@@ -726,7 +727,6 @@ void pub_timer_callback()
 						}
 					}
 				}
-
 				frist_pos=GetSubStrPos(mqtt_buff,"\"day\":");
 				os_strncpy(timing_day[timer],mqtt_buff+frist_pos+7,7);//保存第N个定时的重复的天数
 
@@ -771,11 +771,14 @@ void pub_timer_callback()
 
 				os_sprintf(wifi_socket_timing[timer],"{\"time\":\"%s,%s,%s,%s\",\"timer\":%d}",timing_ontime[timer],
 							timing_offtime[timer],timing_day[timer],timing_timersta[timer],timer);
-
 				//获取定时数量，如果大于20个，清空当前的定时，上传超过20
 				if(get_timer()>20)
 				{
 					os_memset(wifi_socket_timing[timer],0,os_strlen(wifi_socket_timing[timer]));
+					os_memset(timing_day[timer],0,os_strlen(timing_day[timer]));
+					os_memset(timing_ontime[timer],0,os_strlen(timing_ontime[timer]));
+					os_memset(timing_offtime[timer],0,os_strlen(timing_offtime[timer]));
+					os_memset(timing_timersta[timer],0,os_strlen(timing_timersta[timer]));
 					os_memset(pub_buff,0,os_strlen(pub_buff));
 					os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_timeout_ack\",\"sid\":\"%s\"}",dev_sid);
 				}
@@ -1192,7 +1195,7 @@ void user_init(void)
 	load_flash(CFG_LOCATION + 4,(uint32 *)&dev_sta);
 
 	on_off_flag=1;
-
+	//spi_flash_erase_sector(CFG_LOCATION + 5);
 	spi_flash_read((CFG_LOCATION + 5) * SPI_FLASH_SEC_SIZE,(uint32 *)list, sizeof(list));
 #if time_debug
 	os_printf("list=%s\r\n",list);
