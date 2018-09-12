@@ -28,7 +28,7 @@
 #define debug 0
 #define tcp_debug 	1
 #define smartconfig 0
-#define time_debug  1
+#define time_debug  0
 void ICACHE_FLASH_ATTR smartconfig_done(sc_status status, void *pdata);
 
 int GetSubStrPos(char *str1,char *str2);

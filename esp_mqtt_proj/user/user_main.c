@@ -55,6 +55,7 @@ uint32 priv_param_start_sec;//flash开始
 
 #define RELAY_ON  GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_PIN_NUM), 1);
 #define RELAY_OFF GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_PIN_NUM), 0);
+LOCAL os_timer_t flash_light_timer;
 
 
 uint8 mqtt_buff[200];				//mqtt接收数据缓存
@@ -95,7 +96,7 @@ tm now_timedate;
 LOCAL os_timer_t socket_timer;
 
 
-uint8 wifi_socket_timing[24][200];//存储定时器数据
+uint8 wifi_socket_timing[24][200];		//存储定时器数据
 
 uint8 now_time[10];						//记录当前时间
 
@@ -575,14 +576,14 @@ void socket_timer_callback()
 	}
 	if(count==0)
 	{
-#if time_debug
+#if 1
 		os_printf("no timer is open!!!\r\n");
 #endif
 		os_timer_disarm(&socket_timer);
 	}
 	else
 	{
-#if time_debug
+#if 1
 		os_printf("timer num is:%d\r\n",count);
 #endif
 		count=0;
@@ -817,10 +818,10 @@ void pub_timer_callback()
 				else
 					timer=(mqtt_buff[frist_pos+8]-'0');//获取要删除的定时
 				/****************************全清空该定时器的状态******************************************/
-				os_memset(wifi_socket_timing[timer],55,os_strlen(wifi_socket_timing[timer]));
-				os_memset(timing_day[timer],88,os_strlen(timing_day[timer]));
-				os_memset(timing_ontime[timer],88,os_strlen(timing_ontime[timer]));
-				os_memset(timing_offtime[timer],88,os_strlen(timing_offtime[timer]));
+				os_memset(wifi_socket_timing[timer],0,os_strlen(wifi_socket_timing[timer]));
+				os_memset(timing_day[timer],0,os_strlen(timing_day[timer]));
+				os_memset(timing_ontime[timer],0,os_strlen(timing_ontime[timer]));
+				os_memset(timing_offtime[timer],0,os_strlen(timing_offtime[timer]));
 				os_memset(timing_timersta[timer],0,os_strlen(timing_timersta[timer]));
 
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_del_timing_ack\",\"timer\":%d,\"sid\":\"%s\"}",timer,dev_sid);
@@ -869,12 +870,10 @@ void pub_timer_callback()
 		{
 			RELAY_OFF;
 			os_strcpy(state,"\"off\"");
-			//os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":\"off\",\"sid\":\"%s\"}",dev_sid);
 		}
 		else
 		{
 			os_strcpy(state,"\"on\"");
-			//os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":\"on\",\"sid\":\"%s\"}",dev_sid);
 			RELAY_ON;
 		}
 		os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":%s,\"sid\":\"%s\"}",state,dev_sid);
@@ -891,6 +890,21 @@ void pub_timer_callback()
 	}
 
 }
+/********************************配网指示灯闪烁回调函数**********************************************/
+void flash_light_timer_callback()
+{
+	static uint8 flag=0;
+	if(flag==0)
+	{
+		flag=1;
+		Smart_LED_OFF;
+	}
+	else
+	{
+		flag=0;
+		Smart_LED_ON;
+	}
+}
 
 //长按按键开始配网
 static void Switch_LongPress_Handler( void )
@@ -903,6 +917,11 @@ static void Switch_LongPress_Handler( void )
 #endif
 		Smart_LED_OFF;
 		os_timer_disarm(&sntp_timer);
+/****************************配网指示灯开始闪烁*****************************************/
+		os_timer_disarm(&flash_light_timer);
+		os_timer_setfn(&flash_light_timer, (os_timer_func_t *)flash_light_timer_callback, NULL);
+		os_timer_arm(&flash_light_timer, 300, 1);//300ms
+/*******************************************************************************/
 		wifi_station_disconnect();
 		MQTT_Disconnect(&mqttClient);
 		os_delay_us(60000);
@@ -993,10 +1012,8 @@ void MQTT_Init()
 	os_sprintf(pub_topic,"iotbroad/iot/socket_ack/%s",dev_sid);
 
 	MQTT_InitConnection(&mqttClient, sysCfg.mqtt_host, sysCfg.mqtt_port, sysCfg.security);
-	//MQTT_InitConnection(&mqttClient, "192.168.11.122", 1880, 0);
 
 	MQTT_InitClient(&mqttClient, sysCfg.device_id, sysCfg.mqtt_user, sysCfg.mqtt_pass, sysCfg.mqtt_keepalive, 1);
-	//MQTT_InitClient(&mqttClient, "client_id", "user", "pass", 120, 1);
 
 	MQTT_InitLWT(&mqttClient, "/lwt", "offline", 0, 0);
 	MQTT_OnConnected(&mqttClient, mqttConnectedCb);
@@ -1005,7 +1022,7 @@ void MQTT_Init()
 	MQTT_OnData(&mqttClient, mqttDataCb);
 }
 
-
+/*************************************脸上wifi后检测IP*******************************************/
 void check_ip_timer_callback()
 {
 	static uint8_t wifiStatus = STATION_IDLE;
@@ -1036,7 +1053,6 @@ void check_ip()
 	 os_timer_setfn(&check_ip_timer, (os_timer_func_t *)check_ip_timer_callback, NULL);
 	 os_timer_arm(&check_ip_timer, 100, 1);//100ms
 }
-
 
 /******************************************************************************
  * FunctionName : user_rf_cal_sector_set
@@ -1183,7 +1199,6 @@ void user_init(void)
 #endif
  //检测到连接ip之后连接mqtt
 	check_ip();
-	user_rf_cal_sector_set();
 
 	wifi_set_sleep_type(MODEM_SLEEP_T);
 
