@@ -29,8 +29,11 @@
 */
 #include "user_config.h"
 #include "tcp.h"
-
+#include "ota.h"
 /**********************************************************************/
+#define SYS_VER  			"1.5"//版本号
+
+
 #define DEVICE_TYPE 		"gh_9e2cff3dfa51" //wechat public number
 #define DEVICE_ID 			"122475" //model ID
 
@@ -60,6 +63,7 @@ LOCAL os_timer_t flash_light_timer;
 
 uint8 mqtt_buff[200];				//mqtt接收数据缓存
 uint8 pub_topic[50],sub_topic[50];	//mqtt发布和订阅主题
+uint8 service_topic[80];			//向服务器返回状态主题
 uint8 pub_flag=0;
 uint8 on_off_flag=0;
 uint8 dev_sta=0;					//设备状态
@@ -137,7 +141,7 @@ const airkiss_config_t akconf =
 
 
 
-void socket_timer_callback();
+void ICACHE_FLASH_ATTR  socket_timer_callback();
 /****************************************************************************
 						MQTT
 ******************************************************************************/
@@ -145,7 +149,7 @@ MQTT_Client mqttClient;
 typedef unsigned long u32_t;
 static ETSTimer sntp_timer;
 
-void sys_restart_timer_callback()
+void  ICACHE_FLASH_ATTR sys_restart_timer_callback()
 {
 	static uint8 i;
 	i++;
@@ -288,7 +292,7 @@ my_sntp_init(void)
 	 os_timer_arm(&sntp_timer, 1000, 1);//1s
 }
 
-void wifiConnectCb(uint8_t status)
+void ICACHE_FLASH_ATTR  wifiConnectCb(uint8_t status)
 {
 
 
@@ -304,10 +308,10 @@ void wifiConnectCb(uint8_t status)
 
 
 
-void mqttConnectedCb(uint32_t *args)
+void ICACHE_FLASH_ATTR  mqttConnectedCb(uint32_t *args)
 {
 	uint8 init_buff[50];
-	os_sprintf(init_buff,"{\"cmd\":\"i am ok\",\"dev\":\"socket\",\"sid\":\"%s\"}",dev_sid);
+	os_sprintf(init_buff,"{\"cmd\":\"i am ok\",\"dev\":\"socket\",\"sys_ver\":\"%s\",\"sid\":\"%s\"}",SYS_VER,dev_sid);
     MQTT_Client* client = (MQTT_Client*)args;
 #if 1
     INFO("MQTT: Connected\r\n");
@@ -319,7 +323,7 @@ void mqttConnectedCb(uint32_t *args)
 
 }
 
-void mqttDisconnectedCb(uint32_t *args)
+void  ICACHE_FLASH_ATTR mqttDisconnectedCb(uint32_t *args)
 {
     MQTT_Client* client = (MQTT_Client*)args;
 
@@ -328,7 +332,7 @@ void mqttDisconnectedCb(uint32_t *args)
 #endif
 }
 
-void mqttPublishedCb(uint32_t *args)
+void ICACHE_FLASH_ATTR  mqttPublishedCb(uint32_t *args)
 {
     MQTT_Client* client = (MQTT_Client*)args;
 
@@ -339,7 +343,7 @@ void mqttPublishedCb(uint32_t *args)
 #endif
 }
 
-void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const char *data, uint32_t data_len)
+void ICACHE_FLASH_ATTR  mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const char *data, uint32_t data_len)
 {
     char *topicBuf = (char*)os_zalloc(topic_len+1),
             *dataBuf = (char*)os_zalloc(data_len+1);
@@ -513,7 +517,7 @@ smartconfig_done(sc_status status, void *pdata)
 
 #endif
 /******************倒计时回调******************************/
-void onoff_timer_callback()
+void  ICACHE_FLASH_ATTR onoff_timer_callback()
 {
 	if(sec==0)
 	{
@@ -536,18 +540,18 @@ void onoff_timer_callback()
 	sec--;
 }
 
-void save_flash(uint32 des_addr,uint32* data)
+void ICACHE_FLASH_ATTR  save_flash(uint32 des_addr,uint32* data)
 {
 	spi_flash_erase_sector(des_addr);
 	spi_flash_write(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data));
 }
-void load_flash(uint32 des_addr,uint32* data)
+void  ICACHE_FLASH_ATTR load_flash(uint32 des_addr,uint32* data)
 {
 	spi_flash_read(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data));
 }
 
 /***********************定时器******************************/
-void socket_timer_callback()
+void  ICACHE_FLASH_ATTR socket_timer_callback()
 {
 	uint8 i;
 	static uint8 count=0;
@@ -583,7 +587,7 @@ void socket_timer_callback()
 	}
 	else
 	{
-#if 1
+#if 0
 		os_printf("timer num is:%d\r\n",count);
 #endif
 		count=0;
@@ -593,7 +597,7 @@ void socket_timer_callback()
 
 
 /************************获取定时器个数********************************/
-uint8 get_timer()
+uint8 ICACHE_FLASH_ATTR  get_timer()
 {
 	uint8 i,count=0;
 	for(i=1;i<24;i++)
@@ -603,11 +607,11 @@ uint8 get_timer()
 			count++;
 		}
 	}
-	os_printf("count num is:%d\r\n",count);
+//	os_printf("count num is:%d\r\n",count);
 	return count;
 }
 /****************************拼定时器列表*************************************************/
-void send_list()
+void ICACHE_FLASH_ATTR  send_list()
 {
 	uint8 i,count=0;
 	os_sprintf(list,"{\"cmd\":\"wifi_socket_read_timing_ack\",\"sid\":\"%s\",\"data\":[",dev_sid);
@@ -627,14 +631,16 @@ void send_list()
 #endif
 }
 /****************************************收到数据开始处理*******************************************/
-void pub_timer_callback()
+void ICACHE_FLASH_ATTR  pub_timer_callback()
 {
 	uint8 frist_pos=0;
 	uint16 i;
 	uint8 shi,fen,miao;
 	uint8 pub_buff[200];		//发布数据缓存
 	static uint8 state[10];
+	static uint8 ip[4]={192,168,1,3};
 	os_memset(state,0,os_strlen(state));
+
 	if(pub_flag==1)
 	{
 		pub_flag=0;
@@ -675,7 +681,6 @@ void pub_timer_callback()
 					 os_timer_arm(&onoff_timer, 1000, 1);//1000ms
 				}
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_count_down_ack\",\"state\":\"%s\",\"data\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",state,shi,fen,miao,dev_sid);
-				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 				if(tcp_send==1)
 				{
 					tcp_send=0;
@@ -694,7 +699,6 @@ void pub_timer_callback()
 				else
 					os_strcpy(state,"on");
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_read_down_ack\",\"state\":\"%s\",\"data\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",state,min/60,min%60,sec,dev_sid);
-				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 				if(tcp_send==1)
 				{
 					tcp_send=0;
@@ -719,11 +723,6 @@ void pub_timer_callback()
 				//获取定时数量，如果大于20个，清空当前的定时，上传超过20
 				if(get_timer()>19&&timer==0)
 				{
-					/*os_memset(wifi_socket_timing[timer],0,os_strlen(wifi_socket_timing[timer]));
-					os_memset(timing_day[timer],0,os_strlen(timing_day[timer]));
-					os_memset(timing_ontime[timer],0,os_strlen(timing_ontime[timer]));
-					os_memset(timing_offtime[timer],0,os_strlen(timing_offtime[timer]));
-					os_memset(timing_timersta[timer],0,os_strlen(timing_timersta[timer]));*/
 					os_memset(pub_buff,0,os_strlen(pub_buff));
 					os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_timeout_ack\",\"sid\":\"%s\"}",dev_sid);
 				}
@@ -793,7 +792,6 @@ void pub_timer_callback()
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 
-				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 			}
 /************************************读定时列表*****************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read_timing\"")!=NULL)
@@ -810,7 +808,6 @@ void pub_timer_callback()
 				}
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,list, os_strlen(list), 0, 0);
-				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 
 			}
 /*****************************************删除定时*****************************************************/
@@ -845,13 +842,24 @@ void pub_timer_callback()
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read\"")!=NULL)
 			{
 				on_off_flag=1;
-				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
+			}
+/*****************************************ota**********************************************************/
+			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_update\"")!=NULL)
+			{
+				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_update_ack\",\"sid\":\"%s\"}",dev_sid);
+				if(tcp_send==1)
+				{
+					tcp_send=0;
+					WIFI_TCP_SendNews(pub_buff,os_strlen(pub_buff));
+				}
+				else
+					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
+				ota_start_Upgrade(ip, 80,"8266update/");
 			}
 /**********************获取IP*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_ping\"")!=NULL)
 			{
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
-				os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 				MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
 
@@ -882,11 +890,14 @@ void pub_timer_callback()
 			os_strcpy(state,"\"on\"");
 			RELAY_ON;
 		}
-		os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":%s,\"sid\":\"%s\"}",state,dev_sid);
+		os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":%s,\"sys_ver\":\"%s\",\"sid\":\"%s\"}",state,SYS_VER,dev_sid);
 		if(tcp_send==1)
 		{
 			tcp_send=0;
 			WIFI_TCP_SendNews(pub_buff,os_strlen(pub_buff));
+			//***************************向服务器**************************************/
+			MQTT_Publish(&mqttClient,  service_topic,pub_buff, os_strlen(pub_buff), 0, 0);
+			//****************************************************************/
 		}
 		else
 			MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
@@ -897,7 +908,7 @@ void pub_timer_callback()
 
 }
 /********************************配网指示灯闪烁回调函数**********************************************/
-void flash_light_timer_callback()
+void ICACHE_FLASH_ATTR  flash_light_timer_callback()
 {
 	static uint8 flag=0;
 	if(flag==0)
@@ -915,6 +926,7 @@ void flash_light_timer_callback()
 //长按按键开始配网
 static void Switch_LongPress_Handler( void )
 {
+
 #if smartconfig
 		wifi_station_dhcpc_start();
 		smartconfig_set_type(SC_TYPE_ESPTOUCH_AIRKISS); //SC_TYPE_ESPTOUCH,SC_TYPE_AIRKISS,SC_TYPE_ESPTOUCH_AIRKISS
@@ -934,6 +946,7 @@ static void Switch_LongPress_Handler( void )
 		WIFIAPInit();
 
 	    WIFIServerMode();
+
 }
 
 //短按开启/断开开关
@@ -949,7 +962,7 @@ static void Switch_ShortPress_Handler( void )
 		dev_sta=0;
 }
 
-void gpio_init(void)
+void ICACHE_FLASH_ATTR  gpio_init(void)
 {
 	 PIN_FUNC_SELECT(SMART_LED_PIN_MUX,SMART_LED_PIN_FUNC);//LED
 	 PIN_FUNC_SELECT(RELAY_PIN_MUX,RELAY_PIN_FUNC);//RELAY
@@ -974,7 +987,7 @@ void gpio_init(void)
 
 *************************************************************************/
 //
-void ReadStrUnit(char * str,char *temp_str,int idx,int len)
+void ICACHE_FLASH_ATTR  ReadStrUnit(char * str,char *temp_str,int idx,int len)
 {
    static uint16 index = 0;
    for(index=0; index < len; index++)
@@ -984,7 +997,7 @@ void ReadStrUnit(char * str,char *temp_str,int idx,int len)
    temp_str[index] = '\0';
 }
 
-int GetSubStrPos(char *str1,char *str2)
+int  ICACHE_FLASH_ATTR GetSubStrPos(char *str1,char *str2)
 {
    int idx = 0;
    int len1 = strlen(str1);
@@ -1012,11 +1025,11 @@ int GetSubStrPos(char *str1,char *str2)
 /***********************************************
  初始化
  **********************************/
-void MQTT_Init()
+void  ICACHE_FLASH_ATTR MQTT_Init()
 {
 	os_sprintf(sub_topic,"iotbroad/iot/socket/%s",dev_sid);
 	os_sprintf(pub_topic,"iotbroad/iot/socket_ack/%s",dev_sid);
-
+	os_sprintf(service_topic,"iotbroad/iot/dev/socket_ack/%s",dev_sid);
 	MQTT_InitConnection(&mqttClient, sysCfg.mqtt_host, sysCfg.mqtt_port, sysCfg.security);
 
 	MQTT_InitClient(&mqttClient, sysCfg.device_id, sysCfg.mqtt_user, sysCfg.mqtt_pass, sysCfg.mqtt_keepalive, 1);
@@ -1029,7 +1042,7 @@ void MQTT_Init()
 }
 
 /*************************************脸上wifi后检测IP*******************************************/
-void check_ip_timer_callback()
+void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 {
 	static uint8_t wifiStatus = STATION_IDLE;
 	struct ip_info ipConfig;
@@ -1053,7 +1066,7 @@ void check_ip_timer_callback()
 
 }
 
-void check_ip()
+void  ICACHE_FLASH_ATTR check_ip()
 {
 	 os_timer_disarm(&check_ip_timer);
 	 os_timer_setfn(&check_ip_timer, (os_timer_func_t *)check_ip_timer_callback, NULL);
@@ -1126,7 +1139,7 @@ user_rf_cal_sector_set(void)
 
 
 
-void to_scan(void)
+void  ICACHE_FLASH_ATTR to_scan(void)
 {
 	static uint8 buff[1000]={' '},cache[1000]={' '};
 	uint8 i,frist_pos=0,len=0;
@@ -1156,8 +1169,9 @@ void to_scan(void)
 			os_memset(buff,0,sizeof(buff));//清空buff
 			os_strcpy(buff,cache);//将截取到的数据重新拷贝到buff
 			//os_printf("buff=%s\r\n",buff);
-			//os_printf("wifi_socket_timing[%d]=%s\r\n",data,wifi_socket_timing[data]);
+
 #if time_debug
+			os_printf("wifi_socket_timing[%d]=%s\r\n",data,wifi_socket_timing[data]);
 			os_printf("timing_ontime[%d]=%s\r\n",data,timing_ontime[data]);
 			os_printf("timing_offtime[%d]=%s\r\n",data,timing_offtime[data]);
 			os_printf("timing_day[%d]=%s\r\n",data,timing_day[data]);
@@ -1210,7 +1224,7 @@ void user_init(void)
 
    	system_init_done_cb(to_scan);
 	INFO("\r\nSystem started ...\r\n");
-
+	os_printf("SYS_Ver is %s\r\n",SYS_VER);
 }
 
 

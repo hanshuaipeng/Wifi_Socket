@@ -43,6 +43,8 @@
 #define MQTT_TASK_PRIO                2
 #define MQTT_TASK_QUEUE_SIZE        1
 #define MQTT_SEND_TIMOUT            5
+#define ESPCONN_CLIENT				0x01
+
 
 #ifndef QUEUE_BUFFER_SIZE
 #define QUEUE_BUFFER_SIZE             4096
@@ -86,7 +88,6 @@ mqtt_dns_found(const char *name, ip_addr_t *ipaddr, void *arg)
             if(DEFAULT_SECURITY >= TWO_WAY_ANTHENTICATION) {
                 espconn_secure_cert_req_enable(ESPCONN_CLIENT,CLIENT_CERT_FLASH_ADDRESS);
             }
-
             espconn_secure_connect(client->pCon);
 #else
             INFO("TCP: Do not support SSL\r\n");
@@ -793,7 +794,7 @@ MQTT_InitLWT(MQTT_Client *mqttClient, uint8_t* will_topic, uint8_t* will_msg, ui
 void ICACHE_FLASH_ATTR
 MQTT_Connect(MQTT_Client *mqttClient)
 {
-    //espconn_secure_set_size(0x01,6*1024);       // try to modify memory size 6*1024 if ssl/tls handshake failed
+   // espconn_secure_set_size(0x01,6*1024);       // try to modify memory size 6*1024 if ssl/tls handshake failed
     if (mqttClient->pCon) {
         // Clean up the old connection forcefully - using MQTT_Disconnect
         // does not actually release the old connection until the

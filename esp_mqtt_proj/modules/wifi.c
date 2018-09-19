@@ -113,7 +113,7 @@ void ICACHE_FLASH_ATTR WIFI_Connect(uint8_t* ssid, uint8_t* pass, WifiCallback c
 	os_sprintf(stationConf.ssid, "%s", ssid);
 	os_sprintf(stationConf.password, "%s", pass);
 
-	wifi_station_set_config_current(&stationConf);
+	wifi_station_set_config(&stationConf);
 
 	os_timer_disarm(&WiFiLinker);
 	os_timer_setfn(&WiFiLinker, (os_timer_func_t *)wifi_check_ip, NULL);

@@ -50,7 +50,7 @@ uint8 tcp_send=0;
  * 函数名:void Wifi_AP_Init()
  * 功能wifi_ap初始化
  */
-void WIFIAPInit()
+void ICACHE_FLASH_ATTR WIFIAPInit()
 {
     struct softap_config apConfig;
 
@@ -78,7 +78,7 @@ void WIFIAPInit()
  *函数名:void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
  *功能:接收监听函数
  */
-void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
+void ICACHE_FLASH_ATTR TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
 {
 	static uint8 pos,i,ssid_len,password_len;
 	uint8 ssid[20]={},password[20]={},ack[50]={};
@@ -127,7 +127,7 @@ void TcpServer_Listen_Recv(void *arg, char *pdata, unsigned short len)
  * 函数名:void TcpServer_Listen_Recb(void *arg, sint8 errType)
  * 功能:连接监听函数
  */
-void TcpServer_Listen_recon_cb(void *arg, sint8 errType)
+void ICACHE_FLASH_ATTR ICACHE_FLASH_ATTR TcpServer_Listen_recon_cb(void *arg, sint8 errType)
 {
 
     struct espconn *pespconn = (struct espconn *)arg;
@@ -137,7 +137,7 @@ void TcpServer_Listen_recon_cb(void *arg, sint8 errType)
  * 函数名:void Tcp_Server_Listen_discon_cb(void *arg)
  * 功能:正常断开时监听函数
  */
-void Tcp_Server_Listen_discon_cb(void *arg)
+void ICACHE_FLASH_ATTR Tcp_Server_Listen_discon_cb(void *arg)
 {
       struct espconn *pespconn = (struct espconn *) arg;
       linkConType *linkTemp = (linkConType *) pespconn->reverse;
@@ -149,7 +149,7 @@ void Tcp_Server_Listen_discon_cb(void *arg)
  * 函数名:void Tcp_Server_Listen_sent_cb(void *arg)
  * 功能:发送成功监听函数
  */
-void Tcp_Server_Listen_sent_cb(void *arg)
+void ICACHE_FLASH_ATTR ICACHE_FLASH_ATTR Tcp_Server_Listen_sent_cb(void *arg)
 {
       struct espconn *pespconn = (struct espconn *) arg;
      linkConType *linkTemp = (linkConType *) pespconn->reverse;
@@ -161,7 +161,7 @@ void Tcp_Server_Listen_sent_cb(void *arg)
  * 函数名:void TcpServer_Listen_PCon(void *arg)
  * 功能:手机连入AP监听函数
  */
-void TcpServerListen_PCon(void *arg)
+void ICACHE_FLASH_ATTR ICACHE_FLASH_ATTR TcpServerListen_PCon(void *arg)
 {
 
     struct espconn *pespconn = (struct espconn *)arg;
@@ -183,7 +183,7 @@ void TcpServerListen_PCon(void *arg)
  * 函数名:void dhcps_lease()
  * 功能:分配ip范围
  */
-void dhcps_lease(void)
+void ICACHE_FLASH_ATTR dhcps_lease(void)
 {
 
 	struct	dhcps_lease	dhcp_lease;
@@ -207,7 +207,7 @@ void dhcps_lease(void)
  * 函数名:void WIFI_Server_MODE()
  * 功能:设置服务器模式
  */
-void WIFIServerMode()
+void ICACHE_FLASH_ATTR WIFIServerMode()
 {
 	espconn_tcp_set_max_con(5);                                         //设置TCP连接的最大多少
 	pTcpServer = (struct espconn *)os_zalloc(sizeof(struct espconn));
@@ -223,7 +223,7 @@ void WIFIServerMode()
  * 函数名:void WIFI_TCP_SendNews(unsigned char *dat)
  * 功能:像TCP服务器发送消息
  */
-void WIFI_TCP_SendNews(unsigned char *dat,uint16 len)
+void ICACHE_FLASH_ATTR WIFI_TCP_SendNews(unsigned char *dat,uint16 len)
 {
     espconn_send(pLink.pCon,dat,len);
 }

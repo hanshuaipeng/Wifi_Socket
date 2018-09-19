@@ -29,10 +29,10 @@
 #define tcp_debug 	1
 #define smartconfig 0
 #define time_debug  0
-void ICACHE_FLASH_ATTR smartconfig_done(sc_status status, void *pdata);
+//void ICACHE_FLASH_ATTR smartconfig_done(sc_status status, void *pdata);
 
-int GetSubStrPos(char *str1,char *str2);
-void wifiConnectCb(uint8_t status);
-void sys_restart();
+int ICACHE_FLASH_ATTR GetSubStrPos(char *str1,char *str2);
+void ICACHE_FLASH_ATTR wifiConnectCb(uint8_t status);
+void ICACHE_FLASH_ATTR sys_restart();
 #endif
 

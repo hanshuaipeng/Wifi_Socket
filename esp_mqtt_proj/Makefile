@@ -73,7 +73,8 @@ LINKFLAGS_eagle.app.v6 = \
 	-lmain	\
 	-ljson	\
 	-lupgrade\
-	-lmbedtls	\
+	-lssl	\
+	-lmbedtls\
 	-lpwm	\
 	-ldriver \
 	-lsmartconfig \
