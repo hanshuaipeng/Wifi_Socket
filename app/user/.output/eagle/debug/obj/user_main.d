@@ -25,4 +25,4 @@
  ../include/modules/config.h ../include/mqtt/debug.h ../../include/gpio.h \
  ../../include/mem.h ../../include/sntp.h ../../include/ip_addr.h \
  ../../include/espconn.h ../../include/smartconfig.h \
- ../../include/airkiss.h ../include/driver/key.h tcp.h ota.h
+ ../../include/airkiss.h ../include/driver/key.h ota.h udp_server.h
