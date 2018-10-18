@@ -14,15 +14,19 @@
 #include "user_config.h"
 #include "upgrade.h"
 
-
+extern MQTT_Client mqttClient;
+extern uint8 pub_topic[50],dev_sid[15];
 void ICACHE_FLASH_ATTR ota_finished_callback(void* arg)
 {
+	uint8 buff[100];
 	 struct upgrade_server_info *update = arg;
 	    if (update->upgrade_flag == true){
 	        os_printf("OTA  Success ! rebooting!\n");
 	        system_upgrade_reboot();
 	    }else{
 	        os_printf("OTA failed!\n");
+	        os_sprintf(buff,"{\"cmd\":\"wifi_light_updatefail_ack\",\"sid\":\"%s\"}",dev_sid);
+	        MQTT_Publish(&mqttClient,  pub_topic,buff, os_strlen(buff), 0, 0);
 	    }
 }
 
@@ -41,12 +45,12 @@ void ICACHE_FLASH_ATTR ota_start_Upgrade(const char *server_ip, uint16_t port,co
 
     //如果检查当前的是处于user1的加载文件，那么拉取的就是user2.bin
     case UPGRADE_FW_BIN1:
-        file = "user2.4096.new.6.bin";
+        file = USER2BIN;
         break;
 
         //如果检查当前的是处于user2的加载文件，那么拉取的就是user1.bin
     case UPGRADE_FW_BIN2:
-        file = "user1.4096.new.6.bin";
+        file = USER1BIN;
         break;
 
         //如果检查都不是，可能此刻不是OTA的bin固件

@@ -37,8 +37,6 @@
 
 
 /**********************************************************************/
-#define SYS_VER  			"gp08-cz01-sw-v1.2"//°æ±¾ºÅ
-#define HARD_VER  			"gp08-cz01-hw-v1.3"//°æ±¾ºÅ
 
 #define DEVICE_TYPE 		"gh_9e2cff3dfa51" //wechat public number
 #define DEVICE_ID 			"122475" //model ID

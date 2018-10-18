@@ -30,6 +30,13 @@
 #define smartconfig 0
 #define time_debug  0
 #define tcp_server  0
+
+
+
+#define SYS_VER  			"gp08-cz01-sw-v1.4"//°æ±¾ºÅ
+#define HARD_VER  			"gp08-cz01-hw-v1.3.2"//°æ±¾ºÅ
+#define USER1BIN			"cz01-v1.3.2-user1.bin"
+#define USER2BIN			"cz01-v1.3.2-user2.bin"
 //void ICACHE_FLASH_ATTR smartconfig_done(sc_status status, void *pdata);
 
 int ICACHE_FLASH_ATTR GetSubStrPos(char *str1,char *str2);
