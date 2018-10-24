@@ -13,7 +13,7 @@ typedef enum{
 
 /*IMPORTANT: the following configuration maybe need modified*/
 /***********************************************************************************************************************/
-#define CFG_HOLDER    0x00FF55A6    /* Change this value to load default configurations */
+#define CFG_HOLDER    0x00FF55A8    /* Change this value to load default configurations */
 
 /*DEFAULT CONFIGURATIONS*/
 
@@ -24,8 +24,8 @@ typedef enum{
 #define MQTT_PORT            3000    // the listening port of your MQTT server or MQTT broker
 
 #define MQTT_CLIENT_ID        "%x"    // the ID of yourself, any string is OK,client would use this ID register itself to MQTT server
-#define MQTT_USER            "han" // your MQTT login name, if MQTT server allow anonymous login,any string is OK, otherwise, please input valid login name which you had registered
-#define MQTT_PASS            "han" // you MQTT login password, same as above
+#define MQTT_USER            "grasp" // your MQTT login name, if MQTT server allow anonymous login,any string is OK, otherwise, please input valid login name which you had registered
+#define MQTT_PASS            "grasp" // you MQTT login password, same as above
 //#define STA_SSID "Xiaomi_iotbroad"    // your AP/router SSID to config your device networking
 //#define STA_PASS "broad608" // your AP/router password
 

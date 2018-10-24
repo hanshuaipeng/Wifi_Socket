@@ -70,13 +70,16 @@ uint8 pub_flag=0;
 uint8 on_off_flag=0;
 uint8 dev_sta=0;					//设备状态
 
-uint8 abc;
+uint8 send_serv;
 
 extern uint8 tcp_send;
 
 uint8 local_ip[20];					//记录本地IP，用于station模式的tcp service
 
 uint8 dev_sid[15];					//记录设备SID
+
+
+LOCAL os_timer_t serv_timer;
 /*************************************
  *倒计时相关变量
  */
@@ -195,6 +198,7 @@ void sntpfn()
     	if(timer_start==0)
     	{
     		timer_start=1;
+    		MQTT_Connect(&mqttClient);
 			os_timer_disarm(&socket_timer);
 			os_timer_setfn(&socket_timer, (os_timer_func_t *)socket_timer_callback, NULL);
 			os_timer_arm(&socket_timer, 1000, 1);//1s
@@ -342,7 +346,7 @@ void mqttPublishedCb(uint32_t *args)
     MQTT_Client* client = (MQTT_Client*)args;
 
     pub_flag=0;
-    abc=1;
+    //abc=1;
     os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 #if 1
     INFO("MQTT: Published\r\n");
@@ -636,6 +640,12 @@ void ICACHE_FLASH_ATTR  send_list()
 #if 0
 	os_printf("%s\n", list);
 #endif
+}
+void ICACHE_FLASH_ATTR  serv_timer_callback()//用于发送状态给服务器，服务器保存当前状态
+{
+	send_serv=1;
+	os_timer_disarm(&serv_timer);
+	os_printf("send to serv\r\n");
 }
 /****************************************收到数据开始处理*******************************************/
 void ICACHE_FLASH_ATTR  pub_timer_callback()
@@ -931,12 +941,10 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 #else
 					WIFI_UDP_SendNews(pub_buff,os_strlen(pub_buff));
 #endif
-			//***************************向服务器**************************************/
-			if(abc==1)
-			{
-				MQTT_Publish(&mqttClient,  service_topic,pub_buff, os_strlen(pub_buff), 0, 0);
-				abc=0;
-			}
+			//***********向服务器，3S后发送数据给服务器保存数据，连续触发UDP开关后，会不断刷新清零定时器*************************/
+			os_timer_disarm(&serv_timer);
+			os_timer_setfn(&serv_timer, (os_timer_func_t *)serv_timer_callback, NULL);
+			os_timer_arm(&serv_timer, 3000, 1);//3000ms
 			//****************************************************************/
 		}
 		else
@@ -944,6 +952,11 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 		save_flash(CFG_LOCATION + 4,(uint32 *)&dev_sta);
 		on_off_flag=0;
+	}
+	if(send_serv==1)
+	{
+		MQTT_Publish(&mqttClient,  service_topic,pub_buff, os_strlen(pub_buff), 0, 0);
+		send_serv=0;
 	}
 
 }
@@ -1163,7 +1176,7 @@ void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 
 			 os_sprintf(local_ip,"%d.%d.%d.%d",ip[0],ip[1],ip[2],ip[3]);
 
-			 MQTT_Connect(&mqttClient);
+			 //MQTT_Connect(&mqttClient);
 		}
 		 //os_timer_disarm(&check_ip_timer);
 	}
