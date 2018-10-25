@@ -69,6 +69,7 @@ uint8 service_topic[80];			//向服务器返回状态主题
 uint8 pub_flag=0;
 uint8 on_off_flag=0;
 uint8 dev_sta=0;					//设备状态
+extern uint8 long_pass_flag;				//长按标志
 
 uint8 send_serv;
 
@@ -198,7 +199,6 @@ void sntpfn()
     	if(timer_start==0)
     	{
     		timer_start=1;
-    		MQTT_Connect(&mqttClient);
 			os_timer_disarm(&socket_timer);
 			os_timer_setfn(&socket_timer, (os_timer_func_t *)socket_timer_callback, NULL);
 			os_timer_arm(&socket_timer, 1000, 1);//1s
@@ -1041,6 +1041,7 @@ static void Switch_LongPress_Handler( void )
 		smartconfig_start(smartconfig_done);
 #endif
 		Smart_LED_OFF;
+		long_pass_flag=1;
 		os_timer_disarm(&sntp_timer);
 		os_timer_disarm(&check_ip_timer);
 /****************************配网指示灯开始闪烁*****************************************/
@@ -1062,14 +1063,26 @@ static void Switch_LongPress_Handler( void )
 //短按开启/断开开关
 static void Switch_ShortPress_Handler( void )
 {
-	pub_flag=1;
-	on_off_flag=1;
-	if(dev_sta==0)
+	if(long_pass_flag==2)
 	{
-		dev_sta=1;
+		long_pass_flag=0;
+		system_restart();
+	}
+	else if(long_pass_flag==1)
+	{
+		long_pass_flag=2;
 	}
 	else
-		dev_sta=0;
+	{
+		pub_flag=1;
+		on_off_flag=1;
+		if(dev_sta==0)
+		{
+			dev_sta=1;
+		}
+		else
+			dev_sta=0;
+	}
 }
 
 void ICACHE_FLASH_ATTR  gpio_init(void)
@@ -1176,7 +1189,7 @@ void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 
 			 os_sprintf(local_ip,"%d.%d.%d.%d",ip[0],ip[1],ip[2],ip[3]);
 
-			 //MQTT_Connect(&mqttClient);
+			 MQTT_Connect(&mqttClient);
 		}
 		 //os_timer_disarm(&check_ip_timer);
 	}

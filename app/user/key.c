@@ -30,7 +30,7 @@
 #include "user_interface.h"
 
 #include "driver/key.h"
-
+uint8 long_pass_flag=0;				//长按标志
 LOCAL void key_intr_handler(void *arg);
 
 /******************************************************************************

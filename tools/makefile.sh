@@ -131,7 +131,7 @@ prompt                 = no
 
 [ req_distinguished_name ]
  O                      = $PROJECT_NAME
- CN                     = 192.168.31.42
+ CN                     = 192.168.1.3
 EOF
 
 cat > client_cert.conf << EOF  
@@ -141,7 +141,7 @@ prompt                 = no
 
 [ req_distinguished_name ]
  O                      = $PROJECT_NAME Device Certificate
- CN                     = 192.168.31.42
+ CN                     = 192.168.31.145
 EOF
 
 	openssl genrsa -out server.key 1024
