@@ -13,7 +13,7 @@ typedef enum{
 
 /*IMPORTANT: the following configuration maybe need modified*/
 /***********************************************************************************************************************/
-#define CFG_HOLDER    0x00FF55A6    /* Change this value to load default configurations */
+#define CFG_HOLDER    0x00FF55A0    /* Change this value to load default configurations */
 
 /*DEFAULT CONFIGURATIONS*/
 
@@ -21,7 +21,7 @@ typedef enum{
 //#define MQTT_PORT            1883
 
 #define MQTT_HOST            "192.168.1.3" // the IP address or domain name of your MQTT server or MQTT broker ,such as "mqtt.yourdomain.com"
-#define MQTT_PORT            3002    // the listening port of your MQTT server or MQTT broker
+#define MQTT_PORT            3000    // the listening port of your MQTT server or MQTT broker
 
 #define MQTT_CLIENT_ID        "%x"    // the ID of yourself, any string is OK,client would use this ID register itself to MQTT server
 #define MQTT_USER            "grasp" // your MQTT login name, if MQTT server allow anonymous login,any string is OK, otherwise, please input valid login name which you had registered
@@ -29,7 +29,7 @@ typedef enum{
 //#define STA_SSID "Xiaomi_iotbroad"    // your AP/router SSID to config your device networking
 //#define STA_PASS "broad608" // your AP/router password
 
-#define DEFAULT_SECURITY    TWO_WAY_ANTHENTICATION      // very important: you must config DEFAULT_SECURITY for SSL/TLS
+#define DEFAULT_SECURITY    NO_TLS      // very important: you must config DEFAULT_SECURITY for SSL/TLS
 
 #define CA_CERT_FLASH_ADDRESS 0x77             // CA certificate address in flash to read, 0x77 means address 0x77000
 #define CLIENT_CERT_FLASH_ADDRESS 0x78          // client certificate and private key address in flash to read, 0x78 means address 0x78000

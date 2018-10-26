@@ -902,7 +902,13 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_equipment_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
 				MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-
+			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_clear\"")!=NULL)
+			{
+				if(spi_flash_erase_sector(CFG_LOCATION + 5)==SPI_FLASH_RESULT_OK)
+				{
+					system_restart();
+				}
+			}
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket\"")!=NULL)
 			{
 				if(strstr(mqtt_buff,"\"on\"")!=NULL)
