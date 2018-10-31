@@ -72,7 +72,7 @@ void ICACHE_FLASH_ATTR ota_start_Upgrade(const char *server_ip, uint16_t port,co
     //设置定时回调时间
     update->check_times = 10000;
     //1024申请内存
-    update->url = (uint8 *)os_zalloc(512);
+    update->url = (uint8 *)os_zalloc(200);
 #if 1
     //打印下請求地址
     os_printf("Http Server Address:%d.%d.%d.%d ,port: %d,filePath: %s,fileName: %s \n",
@@ -90,6 +90,7 @@ void ICACHE_FLASH_ATTR ota_start_Upgrade(const char *server_ip, uint16_t port,co
         os_free(update->pespconn);
         os_free(update->url);
         os_free(update);
+
     } else {
         os_printf(" Upgrading...\n");
     }

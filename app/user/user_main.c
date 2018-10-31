@@ -65,7 +65,7 @@ LOCAL os_timer_t flash_light_timer;
 
 uint8 mqtt_buff[200];				//mqtt接收数据缓存
 uint8 pub_topic[50],sub_topic[50];	//mqtt发布和订阅主题
-uint8 service_topic[80];			//向服务器返回状态主题
+uint8 service_topic[50];			//向服务器返回状态主题
 uint8 pub_flag=0;
 uint8 on_off_flag=0;
 uint8 dev_sta=0;					//设备状态
@@ -75,7 +75,7 @@ uint8 send_serv;
 
 extern uint8 tcp_send;
 
-uint8 local_ip[20];					//记录本地IP，用于station模式的tcp service
+uint8 local_ip[15];					//记录本地IP，用于station模式的tcp service
 
 uint8 dev_sid[15];					//记录设备SID
 
@@ -107,14 +107,14 @@ tm now_timedate;
 LOCAL os_timer_t socket_timer;
 
 
-uint8 wifi_socket_timing[24][200];		//存储定时器数据
+uint8 wifi_socket_timing[22][50];		//存储定时器数据
 
 uint8 now_time[10];						//记录当前时间
 
-uint8 timing_day[24][10];				//记录重复天数
-uint8 timing_ontime[24][10];			//记录定时开启时间
-uint8 timing_offtime[24][10];			//记录定时关闭时间
-uint8 timing_timersta[24][10];			//记录定时器状态
+uint8 timing_day[22][8];				//记录重复天数
+uint8 timing_ontime[22][6];			//记录定时开启时间
+uint8 timing_offtime[22][6];			//记录定时关闭时间
+uint8 timing_timersta[22][5];			//记录定时器状态
 uint8 list[1200];						//存储定时器列表
 uint8 timer=0;							//记录定时器序号
 
@@ -318,7 +318,7 @@ void ICACHE_FLASH_ATTR  wifiConnectCb(uint8_t status)
 
 void mqttConnectedCb(uint32_t *args)
 {
-	static uint8 init_buff[200];
+	uint8 init_buff[200];
 	os_sprintf(init_buff,"{\"cmd\":\"i am ok\",\"dev\":\"socket\",\"sys_ver\":\"%s\",\"hard_ver\":\"%s\",\"sid\":\"%s\"}"
 			,SYS_VER,HARD_VER,dev_sid);
     MQTT_Client* client = (MQTT_Client*)args;
@@ -328,8 +328,6 @@ void mqttConnectedCb(uint32_t *args)
     wifi_set_opmode_current(0x01);
     MQTT_Subscribe(client,  sub_topic, 1);
     MQTT_Publish(&mqttClient,  pub_topic,init_buff, os_strlen(init_buff), 0, 0);
-
-
 }
 
 void mqttDisconnectedCb(uint32_t *args)
@@ -566,7 +564,7 @@ void  ICACHE_FLASH_ATTR socket_timer_callback()
 {
 	uint8 i;
 	static uint8 count=0;
-	for(i=1;i<24;i++)
+	for(i=1;i<22;i++)
 	{
 #if time_debug
 		os_printf("timing_timersta[%d]=%s\r\n",i,timing_timersta[i]);
@@ -611,7 +609,7 @@ void  ICACHE_FLASH_ATTR socket_timer_callback()
 uint8 ICACHE_FLASH_ATTR  get_timer()
 {
 	uint8 i,count=0;
-	for(i=1;i<24;i++)
+	for(i=1;i<22;i++)
 	{
 		if(strstr(wifi_socket_timing[i],"time")!=NULL)
 		{
@@ -626,7 +624,7 @@ void ICACHE_FLASH_ATTR  send_list()
 {
 	uint8 i,count=0;
 	os_sprintf(list,"{\"cmd\":\"wifi_socket_read_timing_ack\",\"sid\":\"%s\",\"data\":[",dev_sid);
-	for(i=0;i<24;i++)
+	for(i=0;i<22;i++)
 	{
 		if(strstr(wifi_socket_timing[i],"time")!=NULL)
 		{
@@ -902,6 +900,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_equipment_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
 				MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
+			/****************清空定时列表*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_clear\"")!=NULL)
 			{
 				if(spi_flash_erase_sector(CFG_LOCATION + 5)==SPI_FLASH_RESULT_OK)
@@ -909,6 +908,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					system_restart();
 				}
 			}
+			/**********************开关**************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket\"")!=NULL)
 			{
 				if(strstr(mqtt_buff,"\"on\"")!=NULL)
@@ -1269,15 +1269,16 @@ user_rf_cal_sector_set(void)
 
 void  ICACHE_FLASH_ATTR to_scan(void)
 {
-	static uint8 buff[1000]={' '},cache[1000]={' '};
 	uint8 i,frist_pos=0,len=0;
 	uint8 data=0;
+	uint8 *buff=os_malloc(1000);
+	uint8 *cache=os_malloc(1000);
 	/***************************导入flash数据并解析****************************************/
 	if(strstr(list,"timer")!=NULL)
 	{
 		frist_pos=GetSubStrPos(list,"[");
 		os_strncpy(buff,list+frist_pos+1,os_strlen(list)-frist_pos-1);
-		for(i=0;i<24;i++)
+		for(i=0;i<22;i++)
 		{
 			frist_pos=GetSubStrPos(buff,"timer");
 			if(buff[frist_pos+8]>='0'&&buff[frist_pos+8]<='9')
@@ -1310,6 +1311,8 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 				break;
 		}
 	}
+	os_free(buff);
+	os_free(cache);
 	/***************************开启任务**********************************/
 	os_timer_disarm(&pub_timer);
 	os_timer_setfn(&pub_timer, (os_timer_func_t *)pub_timer_callback, NULL);
@@ -1349,7 +1352,8 @@ void user_init(void)
 
    	system_init_done_cb(to_scan);
 	INFO("\r\nSystem started ...\r\n");
-	os_printf("SYS_Ver is %s\r\n",SYS_VER);
+	os_printf("SYS_Ver is %s,HARD_Ver is %s\r\n",SYS_VER,HARD_VER);
+	os_printf("devsid is %s\r\n",dev_sid);
 }
 
 
