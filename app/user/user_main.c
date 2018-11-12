@@ -74,7 +74,10 @@ extern uint8 long_pass_flag;				//长按标志
 uint8 send_serv;
 
 extern uint8 tcp_send;
-
+extern uint32 pf;//bit7取反次数
+uint32 pf_cnt;//取反总次数
+extern uint32 pulse;//一度电脉冲总数
+extern uint8 hlw_8032[24];
 uint8 local_ip[15];					//记录本地IP，用于station模式的tcp service
 
 uint8 dev_sid[15];					//记录设备SID
@@ -138,6 +141,7 @@ char temp_str[30];    // 临时子串，查找字符串相关
 #endif
 LOCAL os_timer_t pub_timer;;
 LOCAL os_timer_t check_ip_timer;
+LOCAL os_timer_t power_check_timer;
 
 const airkiss_config_t akconf =
 {
@@ -1266,7 +1270,18 @@ user_rf_cal_sector_set(void)
 }
 
 
-
+void ICACHE_FLASH_ATTR power_check_timer_callback()
+{
+	static uint8 i=0;
+	uint32 power=0;
+	i++;
+	if(i==200)
+	{
+		i=0;
+		pf_cnt=pf*65536+(hlw_8032[21]*256+hlw_8032[22]);
+		power=pf_cnt/pulse;
+	}
+}
 void  ICACHE_FLASH_ATTR to_scan(void)
 {
 	uint8 i,frist_pos=0,len=0;
@@ -1318,13 +1333,17 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 	os_timer_setfn(&pub_timer, (os_timer_func_t *)pub_timer_callback, NULL);
 	os_timer_arm(&pub_timer, 200, 1);//200ms
 
+	os_timer_disarm(&power_check_timer);
+	os_timer_setfn(&power_check_timer, (os_timer_func_t *)power_check_timer_callback, NULL);
+	os_timer_arm(&power_check_timer, 200, 1);//200ms
+
 }
 /* Create a bunch of objects as demonstration. */
 
 void user_init(void)
 {
-	uart_init(BIT_RATE_115200, BIT_RATE_115200);
-
+	uart_init(BIT_RATE_4800, BIT_RATE_115200);
+	system_uart_swap();
 	os_delay_us(60000);
 
    	os_sprintf(dev_sid,"%x%x",system_get_chip_id(),spi_flash_get_id());
