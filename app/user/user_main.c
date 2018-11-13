@@ -63,33 +63,33 @@
 LOCAL os_timer_t flash_light_timer;
 
 
-uint8 mqtt_buff[200];				//mqtt½ÓÊÕÊı¾İ»º´æ
-uint8 pub_topic[50],sub_topic[50];	//mqtt·¢²¼ºÍ¶©ÔÄÖ÷Ìâ
-uint8 service_topic[50];			//Ïò·şÎñÆ÷·µ»Ø×´Ì¬Ö÷Ìâ
+uint8 mqtt_buff[200];				//mqttæ¥æ”¶æ•°æ®ç¼“å­˜
+uint8 pub_topic[50],sub_topic[50];	//mqttå‘å¸ƒå’Œè®¢é˜…ä¸»é¢˜
+uint8 service_topic[50];			//å‘æœåŠ¡å™¨è¿”å›çŠ¶æ€ä¸»é¢˜
 uint8 pub_flag=0;
 uint8 on_off_flag=0;
-uint8 dev_sta=0;					//Éè±¸×´Ì¬
-extern uint8 long_pass_flag;				//³¤°´±êÖ¾
+uint8 dev_sta=0;					//è®¾å¤‡çŠ¶æ€
+extern uint8 long_pass_flag;				//é•¿æŒ‰æ ‡å¿—
 
 uint8 send_serv;
 
 extern uint8 tcp_send;
 
-uint8 local_ip[15];					//¼ÇÂ¼±¾µØIP£¬ÓÃÓÚstationÄ£Ê½µÄtcp service
+uint8 local_ip[15];					//è®°å½•æœ¬åœ°IPï¼Œç”¨äºstationæ¨¡å¼çš„tcp service
 
-uint8 dev_sid[15];					//¼ÇÂ¼Éè±¸SID
+uint8 dev_sid[15];					//è®°å½•è®¾å¤‡SID
 
 
 LOCAL os_timer_t serv_timer;
 /*************************************
- *µ¹¼ÆÊ±Ïà¹Ø±äÁ¿
+ *å€’è®¡æ—¶ç›¸å…³å˜é‡
  */
 
 LOCAL os_timer_t onoff_timer;
 uint16 sec=0,min=0;
 uint8 down_flag=0;
 /*************************************
- *¶¨Ê±Ïà¹Ø±äÁ¿
+ *å®šæ—¶ç›¸å…³å˜é‡
  */
 
 typedef struct
@@ -107,16 +107,16 @@ tm now_timedate;
 LOCAL os_timer_t socket_timer;
 
 
-uint8 wifi_socket_timing[22][50];		//´æ´¢¶¨Ê±Æ÷Êı¾İ
+uint8 wifi_socket_timing[22][50];		//å­˜å‚¨å®šæ—¶å™¨æ•°æ®
 
-uint8 now_time[10];						//¼ÇÂ¼µ±Ç°Ê±¼ä
+uint8 now_time[10];						//è®°å½•å½“å‰æ—¶é—´
 
-uint8 timing_day[22][8];				//¼ÇÂ¼ÖØ¸´ÌìÊı
-uint8 timing_ontime[22][6];			//¼ÇÂ¼¶¨Ê±¿ªÆôÊ±¼ä
-uint8 timing_offtime[22][6];			//¼ÇÂ¼¶¨Ê±¹Ø±ÕÊ±¼ä
-uint8 timing_timersta[22][5];			//¼ÇÂ¼¶¨Ê±Æ÷×´Ì¬
-uint8 list[1200];						//´æ´¢¶¨Ê±Æ÷ÁĞ±í
-uint8 timer=0;							//¼ÇÂ¼¶¨Ê±Æ÷ĞòºÅ
+uint8 timing_day[22][8];				//è®°å½•é‡å¤å¤©æ•°
+uint8 timing_ontime[22][6];			//è®°å½•å®šæ—¶å¼€å¯æ—¶é—´
+uint8 timing_offtime[22][6];			//è®°å½•å®šæ—¶å…³é—­æ—¶é—´
+uint8 timing_timersta[22][5];			//è®°å½•å®šæ—¶å™¨çŠ¶æ€
+uint8 list[1200];						//å­˜å‚¨å®šæ—¶å™¨åˆ—è¡¨
+uint8 timer=0;							//è®°å½•å®šæ—¶å™¨åºå·
 
 
 struct	softap_config	ap_config;
@@ -126,27 +126,14 @@ LOCAL esp_udp ssdp_udp;
 LOCAL struct espconn pssdpudpconn;
 LOCAL os_timer_t ssdp_time_serv;
 
-//°´¼üÏà¹Ø
+//æŒ‰é”®ç›¸å…³
 static struct keys_param switch_param;
 static struct single_key_param *switch_signle;
 
-char temp_str[30];    // ÁÙÊ±×Ó´®£¬²éÕÒ×Ö·û´®Ïà¹Ø
-#if smartconfig
-	uint8_t  lan_buf[200];
-	uint16_t lan_buf_len;
-	uint8 	 udp_sent_cnt = 0;
-#endif
+char temp_str[30];    // ä¸´æ—¶å­ä¸²ï¼ŒæŸ¥æ‰¾å­—ç¬¦ä¸²ç›¸å…³
+
 LOCAL os_timer_t pub_timer;;
 LOCAL os_timer_t check_ip_timer;
-
-const airkiss_config_t akconf =
-{
-	(airkiss_memset_fn)&memset,
-	(airkiss_memcpy_fn)&memcpy,
-	(airkiss_memcmp_fn)&memcmp,
-	0,
-};
-
 
 
 void ICACHE_FLASH_ATTR  socket_timer_callback();
@@ -156,7 +143,43 @@ void ICACHE_FLASH_ATTR  socket_timer_callback();
 MQTT_Client mqttClient;
 typedef unsigned long u32_t;
 static ETSTimer sntp_timer;
+//CRC16æ ¡éªŒå‡½æ•°
+//CRCæ ¡éªŒä½ä½ä½åœ¨å‰ï¼Œé«˜ä½åœ¨å
+uint16 ICACHE_FLASH_ATTR Ar_crc_16(uint8 *input,uint8_t len)
+{
+	uint8 n = 0,m = 0;
+	uint16 crc_in = 0;
+	uint16 crc_re = 0xffff;
+	uint16 poly = 0xa001;
+	uint16 xor_out = 0x0000;
 
+    crc_in = input[len - 2] * 256 + input[len - 1];
+    //os_printf("crc_in=0x%x\r\n",crc_in);// æµ‹è¯•ä»£ç ï¼Œæ‰“å°crc_in
+	for(n=0;n<(len-2);n++)
+	{
+		crc_re = crc_re ^ input[n];
+		for(m=0;m<8;m++)
+		{
+			if(crc_re & 1)
+			{
+				crc_re >>= 1;
+				crc_re = crc_re ^ poly;
+			}
+			else
+			{
+				crc_re >>= 1;
+			}
+		}
+	}
+	crc_re = crc_re ^ xor_out;
+	//os_printf("crc_re=0x%x\r\n",crc_re);// æµ‹è¯•ä»£ç ï¼Œæ‰“å°crcæ ¡éªŒå­—èŠ‚
+	if((crc_in == crc_re)||(crc_in == 0)){
+		return crc_re;
+	}
+	else{
+		return 0;
+	}
+}
 void  ICACHE_FLASH_ATTR sys_restart_timer_callback()
 {
 	static uint8 i;
@@ -195,7 +218,7 @@ void sntpfn()
     } else
     {
 
-/***************************»ñÈ¡µ½ÍøÂçÊ±¼ä ºó¿ªÆô¶¨Ê±ÈÎÎñ**********************************/
+/***************************è·å–åˆ°ç½‘ç»œæ—¶é—´ åå¼€å¯å®šæ—¶ä»»åŠ¡**********************************/
     	if(timer_start==0)
     	{
     		timer_start=1;
@@ -204,21 +227,21 @@ void sntpfn()
 			os_timer_arm(&socket_timer, 1000, 1);//1s
     	}
 /***********************************************************************************/
-    	os_strncpy(now_time,current_time+11,5);//±£´æ  Ê±£º·Ö
+    	os_strncpy(now_time,current_time+11,5);//ä¿å­˜  æ—¶ï¼šåˆ†
     	//os_printf("current time : %s\n", now_time);
 
-    	os_strncpy(chsec,current_time+17,2);//Ãë
-		os_strncpy(chmin,current_time+14,2);//·Ö
-		os_strncpy(chhour,current_time+11,2);//Ê±
-		os_strncpy(chwday,current_time,3);//ÖÜ
+    	os_strncpy(chsec,current_time+17,2);//ç§’
+		os_strncpy(chmin,current_time+14,2);//åˆ†
+		os_strncpy(chhour,current_time+11,2);//æ—¶
+		os_strncpy(chwday,current_time,3);//å‘¨
 #if 0
-		os_strncpy(chmday,current_time+8,2);//Ìì
-		os_strncpy(chmon,current_time+4,3);//ÔÂ
-		os_strncpy(chyear,current_time+20,4);//Äê
+		os_strncpy(chmday,current_time+8,2);//å¤©
+		os_strncpy(chmon,current_time+4,3);//æœˆ
+		os_strncpy(chyear,current_time+20,4);//å¹´
 
 		os_printf("current time : %s\n", current_time);
 
-		//ÔÂ·İ×ª»»
+		//æœˆä»½è½¬æ¢
 		if(strcmp(chmon,"Jan")==0)
 		{
 			now_timedate.tm_mon=1;
@@ -272,7 +295,7 @@ void sntpfn()
 		now_timedate.tm_hour=(chhour[0]-'0')*10+(chhour[1]-'0');
 		now_timedate.tm_min=(chmin[0]-'0')*10+(chmin[1]-'0');
 		now_timedate.tm_sec=(chsec[0]-'0')*10+(chsec[1]-'0');
-		//ÖÜ×ª»»
+		//å‘¨è½¬æ¢
 		if(strcmp(chwday,"Mon")==0)
 			now_timedate.tm_wday=1+'0';
 		else if(strcmp(chwday,"Tue")==0)
@@ -304,7 +327,7 @@ void ICACHE_FLASH_ATTR  wifiConnectCb(uint8_t status)
 {
 
 
-	/*struct ip_info info; //ÓÃÓÚ»ñÈ¡IPµØÖ·µÄĞÅÏ¢
+	/*struct ip_info info; //ç”¨äºè·å–IPåœ°å€çš„ä¿¡æ¯
     if(status == STATION_GOT_IP){
     	wifi_get_ip_info(STATON_IF,&info);
     	station_server_init(&info.ip,8888);
@@ -344,188 +367,92 @@ void mqttPublishedCb(uint32_t *args)
     MQTT_Client* client = (MQTT_Client*)args;
 
     pub_flag=0;
-    //abc=1;
     os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 #if 1
     INFO("MQTT: Published\r\n");
 #endif
 }
-
+void ICACHE_FLASH_ATTR CharToByte(uint8* pChar,uint8* pByte)
+{
+	uint8 h,l;
+	h=pChar[0];//é«˜ä½
+	l=pChar[1];//ä½ä½
+	if(l>='0' && l<='9')
+		l=l-'0';
+	else if(l>='a' && l<='f')
+		l=l-'a'+0xa;
+	else if(l>='A' && l<='F')
+		l=l-'A'+0xa;
+	if(h>='0'&&h<='9')
+		h=h-'0';
+	else if(h>='a' && h<='f')
+		h=h-'a'+0xa;
+	else if(h>='A' &&h <='F')
+		h=h-'A'+0xa;
+	*pByte=h*16+l;
+}
 void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const char *data, uint32_t data_len)
 {
     char *topicBuf = (char*)os_zalloc(topic_len+1),
             *dataBuf = (char*)os_zalloc(data_len+1);
-
+    uint16 crcout=0,crcin=0;
+    uint16 i;
+    uint8 a[2];
     MQTT_Client* client = (MQTT_Client*)args;
 
     os_memcpy(topicBuf, topic, topic_len);
     topicBuf[topic_len] = 0;
 
-    os_memset(mqtt_buff,0,sizeof(mqtt_buff));
-    os_memcpy(dataBuf, data, data_len);
-    os_memcpy(mqtt_buff, data, data_len);
+    if(data_len>300)
+    {
+    	for(i=0;i<data_len/2;i++)
+    	{
+    		os_strncpy(a,data+i*2,2);
+    		CharToByte(a,dataBuf+i);
+    		os_printf("data[%d]=%x\r\n",i,dataBuf[i]);
+    	}
+
+    	crcout=Ar_crc_16(dataBuf,data_len);
+    	crcin=dataBuf[data_len]*256+dataBuf[data_len-1];
+    	if(dataBuf[0]==0xaa&&dataBuf[1]==0x55)
+    	{
+    		if(crcout==crcin)
+			{
+    			if(dataBuf[2]==1)
+    			{
+    				spi_flash_erase_sector(0x77);
+					if(spi_flash_write(0x77000,(uint32*)dataBuf+3, sizeof(dataBuf)-5)==SPI_FLASH_RESULT_OK)
+					{
+						system_restart();
+					}
+    			}
+    			else
+    			{
+    				spi_flash_erase_sector(0x78);
+					if(spi_flash_write(0x78000,(uint32*)dataBuf+3, sizeof(dataBuf)-5)==SPI_FLASH_RESULT_OK)
+					{
+						system_restart();
+					}
+    			}
+			}
+    	}
+    }
+    else
+    {
+    	os_memcpy(dataBuf, data, data_len);
+    	os_memset(mqtt_buff,0,sizeof(mqtt_buff));
+		os_memcpy(mqtt_buff, data, data_len);
+		pub_flag=1;
+    }
     dataBuf[data_len] = 0;
-    pub_flag=1;
 #if 0
-    INFO("Receive topic: %s, data: %s \r\n", topicBuf, dataBuf);
+    INFO("Receive topic: %s, data: %s \r\n", topicBuf, data);
 #endif
     os_free(topicBuf);
     os_free(dataBuf);
 }
 
-
-#if smartconfig
-/******************************************************************************
- 	 	 	 	 	 	 	 	 SMART_CONFIG
- ******************************************************************************/
-
-
-
-LOCAL void ICACHE_FLASH_ATTR
-airkiss_wifilan_time_callback(void)
-{
-	uint16 i;
-	airkiss_lan_ret_t ret;
-
-	if ((udp_sent_cnt++) >5) {
-		udp_sent_cnt = 0;
-		os_timer_disarm(&ssdp_time_serv);//s
-		//return;
-	}
-
-	ssdp_udp.remote_port = DEFAULT_LAN_PORT;
-	ssdp_udp.remote_ip[0] = 255;
-	ssdp_udp.remote_ip[1] = 255;
-	ssdp_udp.remote_ip[2] = 255;
-	ssdp_udp.remote_ip[3] = 255;
-	lan_buf_len = sizeof(lan_buf);
-	ret = airkiss_lan_pack(AIRKISS_LAN_SSDP_NOTIFY_CMD,
-		DEVICE_TYPE, DEVICE_ID, 0, 0, lan_buf, &lan_buf_len, &akconf);
-	if (ret != AIRKISS_LAN_PAKE_READY) {
-		os_printf("Pack lan packet error!");
-		return;
-	}
-
-	ret = espconn_sendto(&pssdpudpconn, lan_buf, lan_buf_len);
-	if (ret != 0) {
-		os_printf("UDP send error!");
-	}
-	os_printf("Finish send notify!\n");
-}
-
-LOCAL void ICACHE_FLASH_ATTR
-airkiss_wifilan_recv_callbk(void *arg, char *pdata, unsigned short len)
-{
-	uint16 i;
-	remot_info* pcon_info = NULL;
-
-	airkiss_lan_ret_t ret = airkiss_lan_recv(pdata, len, &akconf);
-	airkiss_lan_ret_t packret;
-
-	switch (ret){
-	case AIRKISS_LAN_SSDP_REQ:
-		espconn_get_connection_info(&pssdpudpconn, &pcon_info, 0);
-		os_printf("remote ip: %d.%d.%d.%d \r\n",pcon_info->remote_ip[0],pcon_info->remote_ip[1],
-			                                    pcon_info->remote_ip[2],pcon_info->remote_ip[3]);
-		os_printf("remote port: %d \r\n",pcon_info->remote_port);
-
-        pssdpudpconn.proto.udp->remote_port = pcon_info->remote_port;
-		os_memcpy(pssdpudpconn.proto.udp->remote_ip,pcon_info->remote_ip,4);
-		ssdp_udp.remote_port = DEFAULT_LAN_PORT;
-
-		lan_buf_len = sizeof(lan_buf);
-		packret = airkiss_lan_pack(AIRKISS_LAN_SSDP_RESP_CMD,
-			DEVICE_TYPE, DEVICE_ID, 0, 0, lan_buf, &lan_buf_len, &akconf);
-
-		if (packret != AIRKISS_LAN_PAKE_READY) {
-			os_printf("Pack lan packet error!");
-			return;
-		}
-
-		os_printf("\r\n\r\n");
-		for (i=0; i<lan_buf_len; i++)
-			os_printf("%c",lan_buf[i]);
-		os_printf("\r\n\r\n");
-
-		packret = espconn_sendto(&pssdpudpconn, lan_buf, lan_buf_len);
-		if (packret != 0) {
-			os_printf("LAN UDP Send err!");
-		}
-
-		break;
-	default:
-		os_printf("Pack is not ssdq req!%d\r\n",ret);
-		break;
-	}
-}
-
-void ICACHE_FLASH_ATTR
-airkiss_start_discover(void)
-{
-	ssdp_udp.local_port = DEFAULT_LAN_PORT;
-	pssdpudpconn.type = ESPCONN_UDP;
-	pssdpudpconn.proto.udp = &(ssdp_udp);
-	espconn_regist_recvcb(&pssdpudpconn, airkiss_wifilan_recv_callbk);
-	espconn_create(&pssdpudpconn);
-
-	os_timer_disarm(&ssdp_time_serv);
-	os_timer_setfn(&ssdp_time_serv, (os_timer_func_t *)airkiss_wifilan_time_callback, NULL);
-	os_timer_arm(&ssdp_time_serv, 1000, 1);//1s
-}
-
-
-void ICACHE_FLASH_ATTR
-smartconfig_done(sc_status status, void *pdata)
-{
-    switch(status) {
-        case SC_STATUS_WAIT:
-            os_printf("SC_STATUS_WAIT\n");
-            break;
-        case SC_STATUS_FIND_CHANNEL:
-            os_printf("SC_STATUS_FIND_CHANNEL\n");
-            Smart_LED_OFF;
-            MQTT_Disconnect(&mqttClient);
-            break;
-        case SC_STATUS_GETTING_SSID_PSWD:
-            os_printf("SC_STATUS_GETTING_SSID_PSWD\n");
-			sc_type *type = pdata;
-            if (*type == SC_TYPE_ESPTOUCH) {
-                os_printf("SC_TYPE:SC_TYPE_ESPTOUCH\n");
-            } else {
-                os_printf("SC_TYPE:SC_TYPE_AIRKISS\n");
-            }
-            break;
-        case SC_STATUS_LINK:
-            os_printf("SC_STATUS_LINK\n");
-            struct station_config *sta_conf = pdata;
-
-	        wifi_station_set_config(sta_conf);
-	        wifi_station_disconnect();
-	        wifi_station_connect();
-            break;
-        case SC_STATUS_LINK_OVER:
-            os_printf("SC_STATUS_LINK_OVER\n");
-            if (pdata != NULL) {
-				//SC_TYPE_ESPTOUCH
-                uint8 phone_ip[4] = {0};
-
-                os_memcpy(phone_ip, (uint8*)pdata, 4);
-                os_printf("Phone ip: %d.%d.%d.%d\n",phone_ip[0],phone_ip[1],phone_ip[2],phone_ip[3]);
-            } else {
-            	//SC_TYPE_AIRKISS - support airkiss v2.0
-				airkiss_start_discover();
-            }
-            Smart_LED_ON;
-            smartconfig_stop();
-            sys_restart();
-            break;
-    }
-
-}
-
-
-#endif
-/******************µ¹¼ÆÊ±»Øµ÷******************************/
+/******************å€’è®¡æ—¶å›è°ƒ******************************/
 void  ICACHE_FLASH_ATTR onoff_timer_callback()
 {
 	if(sec==0)
@@ -559,7 +486,7 @@ void  ICACHE_FLASH_ATTR load_flash(uint32 des_addr,uint32* data)
 	spi_flash_read(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data));
 }
 
-/***********************¶¨Ê±Æ÷******************************/
+/***********************å®šæ—¶å™¨******************************/
 void  ICACHE_FLASH_ATTR socket_timer_callback()
 {
 	uint8 i;
@@ -577,12 +504,12 @@ void  ICACHE_FLASH_ATTR socket_timer_callback()
 				if(strstr(timing_ontime[i],now_time)!=NULL&&now_timedate.tm_sec==0)
 				{
 					on_off_flag=1;
-					dev_sta=1;//Ê±¼äµ½£¬´ò¿ª
+					dev_sta=1;//æ—¶é—´åˆ°ï¼Œæ‰“å¼€
 				}
 				if(strstr(timing_offtime[i],now_time)!=NULL&&now_timedate.tm_sec==0)
 				{
 					on_off_flag=1;
-					dev_sta=0;//Ê±¼äµ½£¬¹Ø±Õ
+					dev_sta=0;//æ—¶é—´åˆ°ï¼Œå…³é—­
 				}
 			}
 		}
@@ -605,7 +532,7 @@ void  ICACHE_FLASH_ATTR socket_timer_callback()
 
 
 
-/************************»ñÈ¡¶¨Ê±Æ÷¸öÊı********************************/
+/************************è·å–å®šæ—¶å™¨ä¸ªæ•°********************************/
 uint8 ICACHE_FLASH_ATTR  get_timer()
 {
 	uint8 i,count=0;
@@ -619,7 +546,7 @@ uint8 ICACHE_FLASH_ATTR  get_timer()
 //	os_printf("count num is:%d\r\n",count);
 	return count;
 }
-/****************************Æ´¶¨Ê±Æ÷ÁĞ±í*************************************************/
+/****************************æ‹¼å®šæ—¶å™¨åˆ—è¡¨*************************************************/
 void ICACHE_FLASH_ATTR  send_list()
 {
 	uint8 i,count=0;
@@ -639,19 +566,19 @@ void ICACHE_FLASH_ATTR  send_list()
 	os_printf("%s\n", list);
 #endif
 }
-void ICACHE_FLASH_ATTR  serv_timer_callback()//ÓÃÓÚ·¢ËÍ×´Ì¬¸ø·şÎñÆ÷£¬·şÎñÆ÷±£´æµ±Ç°×´Ì¬
+void ICACHE_FLASH_ATTR  serv_timer_callback()//ç”¨äºå‘é€çŠ¶æ€ç»™æœåŠ¡å™¨ï¼ŒæœåŠ¡å™¨ä¿å­˜å½“å‰çŠ¶æ€
 {
 	send_serv=1;
 	os_timer_disarm(&serv_timer);
 	os_printf("send to serv\r\n");
 }
-/****************************************ÊÕµ½Êı¾İ¿ªÊ¼´¦Àí*******************************************/
+/****************************************æ”¶åˆ°æ•°æ®å¼€å§‹å¤„ç†*******************************************/
 void ICACHE_FLASH_ATTR  pub_timer_callback()
 {
 	uint8 frist_pos=0;
 	uint16 i;
 	uint8 shi,fen,miao;
-	static uint8 pub_buff[240];		//·¢²¼Êı¾İ»º´æ
+	static uint8 pub_buff[240];		//å‘å¸ƒæ•°æ®ç¼“å­˜
 	static uint8 state[10];
 	static uint8 ip[4]={192,168,1,3};
 	os_memset(state,0,os_strlen(state));
@@ -662,7 +589,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 		os_memset(pub_buff,0,os_strlen(pub_buff));
 		if(strstr(mqtt_buff,dev_sid)!=NULL)
 		{
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_count_down\"")!=NULL)//µ¹¼ÆÊ±
+			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_count_down\"")!=NULL)//å€’è®¡æ—¶
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"data\":");
 
@@ -708,7 +635,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-/****************************»ñÈ¡µ¹¼ÆÊ±×´Ì¬**********************************/
+/****************************è·å–å€’è®¡æ—¶çŠ¶æ€**********************************/
 			if(strstr(mqtt_buff,"\"wifi_socket_read_down\"")!=NULL)
 			{
 				if(dev_sta==1)
@@ -730,20 +657,20 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-/*****************************ÉèÖÃ¶¨Ê±****************************************************/
+/*****************************è®¾ç½®å®šæ—¶****************************************************/
 			//{"cmd":"wifi_socket_timing","day":"1234567","ontime":"10:00","offtime":"19:00","timer":1,"timer_state":"on","sid":"12345678"}
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//¶¨Ê±Æ÷
+			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//å®šæ—¶å™¨
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
 				if(mqtt_buff[frist_pos+9]>='0'&&mqtt_buff[frist_pos+9]<='9')
 				{
-					timer=(mqtt_buff[frist_pos+8]-'0')*10+(mqtt_buff[frist_pos+9]-'0');//ÓĞ¶àÉÙ¸ö¶¨Ê±
+					timer=(mqtt_buff[frist_pos+8]-'0')*10+(mqtt_buff[frist_pos+9]-'0');//æœ‰å¤šå°‘ä¸ªå®šæ—¶
 				}
 				else
-					timer=(mqtt_buff[frist_pos+8]-'0');//ÓĞ¶àÉÙ¸ö¶¨Ê±
+					timer=(mqtt_buff[frist_pos+8]-'0');//æœ‰å¤šå°‘ä¸ªå®šæ—¶
 
-				/******************************´æ¶¨Ê±ÁĞ±í******************************************/
-				//»ñÈ¡¶¨Ê±ÊıÁ¿£¬Èç¹û´óÓÚ20¸ö£¬Çå¿Õµ±Ç°µÄ¶¨Ê±£¬ÉÏ´«³¬¹ı20
+				/******************************å­˜å®šæ—¶åˆ—è¡¨******************************************/
+				//è·å–å®šæ—¶æ•°é‡ï¼Œå¦‚æœå¤§äº20ä¸ªï¼Œæ¸…ç©ºå½“å‰çš„å®šæ—¶ï¼Œä¸Šä¼ è¶…è¿‡20
 				if(get_timer()>19&&timer==0)
 				{
 					os_memset(pub_buff,0,os_strlen(pub_buff));
@@ -751,19 +678,19 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				}
 				else
 				{
-					if(timer==0)//´ú±íĞÂ½¨µÄ¶¨Ê±Æ÷
+					if(timer==0)//ä»£è¡¨æ–°å»ºçš„å®šæ—¶å™¨
 					{
 						for(i=1;i<24;i++)
 						{
 							if(strstr(wifi_socket_timing[i],"time")==NULL)
 							{
-								timer=i;//±£´æĞÂ½¨¶¨Ê±µÄÎ»ÖÃ
+								timer=i;//ä¿å­˜æ–°å»ºå®šæ—¶çš„ä½ç½®
 								break;
 							}
 						}
 					}
 					frist_pos=GetSubStrPos(mqtt_buff,"\"day\":");
-					os_strncpy(timing_day[timer],mqtt_buff+frist_pos+7,7);//±£´æµÚN¸ö¶¨Ê±µÄÖØ¸´µÄÌìÊı
+					os_strncpy(timing_day[timer],mqtt_buff+frist_pos+7,7);//ä¿å­˜ç¬¬Nä¸ªå®šæ—¶çš„é‡å¤çš„å¤©æ•°
 
 					if(strstr(mqtt_buff,"\"timer_state\":\"on\"")!=NULL)
 					{
@@ -794,7 +721,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 						frist_pos=GetSubStrPos(mqtt_buff,"\"offtime\":");
 						os_strncpy(timing_offtime[timer],mqtt_buff+frist_pos+11,5);
 					}
-					/*************************************¿ªÆô¶¨Ê±ÈÎÎñ*******************************************/
+					/*************************************å¼€å¯å®šæ—¶ä»»åŠ¡*******************************************/
 					os_timer_disarm(&socket_timer);
 					os_timer_setfn(&socket_timer, (os_timer_func_t *)socket_timer_callback, NULL);
 					os_timer_arm(&socket_timer, 1000, 1);//1s
@@ -820,7 +747,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 
 			}
-/************************************¶Á¶¨Ê±ÁĞ±í*****************************************************/
+/************************************è¯»å®šæ—¶åˆ—è¡¨*****************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read_timing\"")!=NULL)
 			{
 				send_list();
@@ -841,7 +768,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,list, os_strlen(list), 0, 0);
 
 			}
-/*****************************************É¾³ı¶¨Ê±*****************************************************/
+/*****************************************åˆ é™¤å®šæ—¶*****************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_del_timing\"")!=NULL)
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
@@ -850,8 +777,8 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					timer=(mqtt_buff[frist_pos+8]-'0')*10+(mqtt_buff[frist_pos+9]-'0');//
 				}
 				else
-					timer=(mqtt_buff[frist_pos+8]-'0');//»ñÈ¡ÒªÉ¾³ıµÄ¶¨Ê±
-				/****************************È«Çå¿Õ¸Ã¶¨Ê±Æ÷µÄ×´Ì¬******************************************/
+					timer=(mqtt_buff[frist_pos+8]-'0');//è·å–è¦åˆ é™¤çš„å®šæ—¶
+				/****************************å…¨æ¸…ç©ºè¯¥å®šæ—¶å™¨çš„çŠ¶æ€******************************************/
 				os_memset(wifi_socket_timing[timer],0,os_strlen(wifi_socket_timing[timer]));
 				os_memset(timing_day[timer],0,os_strlen(timing_day[timer]));
 				os_memset(timing_ontime[timer],0,os_strlen(timing_ontime[timer]));
@@ -872,7 +799,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 
 			}
-/************************************¶Á¿ª¹Ø×´Ì¬************************************************************/
+/************************************è¯»å¼€å…³çŠ¶æ€************************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read\"")!=NULL)
 			{
 				on_off_flag=1;
@@ -894,13 +821,13 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 				ota_start_Upgrade(ip, 80,"8266update/WiFi_Socket/");
 			}
-/**********************»ñÈ¡IP*************************/
+/**********************è·å–IP*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_equipment_ping\"")!=NULL)
 			{
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_equipment_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
 				MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-			/****************Çå¿Õ¶¨Ê±ÁĞ±í*************************/
+			/****************æ¸…ç©ºå®šæ—¶åˆ—è¡¨*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_clear\"")!=NULL)
 			{
 				if(spi_flash_erase_sector(CFG_LOCATION + 5)==SPI_FLASH_RESULT_OK)
@@ -908,7 +835,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					system_restart();
 				}
 			}
-			/**********************¿ª¹Ø**************************/
+			/**********************å¼€å…³**************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket\"")!=NULL)
 			{
 				if(strstr(mqtt_buff,"\"on\"")!=NULL)
@@ -947,7 +874,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 #else
 					WIFI_UDP_SendNews(pub_buff,os_strlen(pub_buff));
 #endif
-			//***********Ïò·şÎñÆ÷£¬3Sºó·¢ËÍÊı¾İ¸ø·şÎñÆ÷±£´æÊı¾İ£¬Á¬Ğø´¥·¢UDP¿ª¹Øºó£¬»á²»¶ÏË¢ĞÂÇåÁã¶¨Ê±Æ÷*************************/
+			//***********å‘æœåŠ¡å™¨ï¼Œ3Såå‘é€æ•°æ®ç»™æœåŠ¡å™¨ä¿å­˜æ•°æ®ï¼Œè¿ç»­è§¦å‘UDPå¼€å…³åï¼Œä¼šä¸æ–­åˆ·æ–°æ¸…é›¶å®šæ—¶å™¨*************************/
 			os_timer_disarm(&serv_timer);
 			os_timer_setfn(&serv_timer, (os_timer_func_t *)serv_timer_callback, NULL);
 			os_timer_arm(&serv_timer, 3000, 1);//3000ms
@@ -966,7 +893,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 	}
 
 }
-/********************************ÅäÍøÖ¸Ê¾µÆÉÁË¸»Øµ÷º¯Êı**********************************************/
+/********************************é…ç½‘æŒ‡ç¤ºç¯é—ªçƒå›è°ƒå‡½æ•°**********************************************/
 void ICACHE_FLASH_ATTR  flash_light_timer_callback()
 {
 	static uint8 flag=0;
@@ -988,7 +915,7 @@ void ICACHE_FLASH_ATTR dhcps_lease(void)
 
 	struct	dhcps_lease	dhcp_lease;
 	struct ip_info info;
-	wifi_softap_dhcps_stop();//ÉèÖÃÇ°¹Ø±ÕDHCP
+	wifi_softap_dhcps_stop();//è®¾ç½®å‰å…³é—­DHCP
 	IP4_ADDR(&dhcp_lease.start_ip,192,168,5,1);
 
 	IP4_ADDR(&dhcp_lease.end_ip,192,168,5,100);
@@ -1004,34 +931,34 @@ void ICACHE_FLASH_ATTR dhcps_lease(void)
 }
 
 /*
- * º¯ÊıÃû:void Wifi_AP_Init()
- * ¹¦ÄÜwifi_ap³õÊ¼»¯
+ * å‡½æ•°å:void Wifi_AP_Init()
+ * åŠŸèƒ½wifi_apåˆå§‹åŒ–
  */
 void ICACHE_FLASH_ATTR WIFIAPInit()
 {
     struct softap_config apConfig;
 
-    /***************************Ä£Ê½ÉèÖÃ************************************/
-         if(wifi_set_opmode(0x03)){          //  ÉèÖÃÎªAPÄ£Ê½
+    /***************************æ¨¡å¼è®¾ç½®************************************/
+         if(wifi_set_opmode(0x03)){          //  è®¾ç½®ä¸ºAPæ¨¡å¼
 
          }else{
 
          }
-    /***************************Ãû×ÖÉèÍ¨µÀÖÃ************************************/
+    /***************************åå­—è®¾é€šé“ç½®************************************/
 	  os_bzero(&apConfig, sizeof(struct softap_config));
 	  wifi_softap_get_config(&apConfig);
-	  apConfig.ssid_len=0;                      //ÉèÖÃssid³¤¶È
+	  apConfig.ssid_len=0;                      //è®¾ç½®ssidé•¿åº¦
 	  os_memset(apConfig.ssid,' ',strlen(apConfig.ssid));
 
-	  os_sprintf(apConfig.ssid,"grasp_socket-%s",dev_sid);			//ÉèÖÃssidÃû×Ö
+	  os_sprintf(apConfig.ssid,"grasp_socket-%s",dev_sid);			//è®¾ç½®ssidåå­—
 
-	 // os_strcpy(apConfig.password,"12345678");  //ÉèÖÃÃÜÂë
-	 // apConfig.authmode =3;                     //ÉèÖÃ¼ÓÃÜÄ£Ê½
-	  wifi_softap_set_config(&apConfig);        //ÅäÖÃ
+	 // os_strcpy(apConfig.password,"12345678");  //è®¾ç½®å¯†ç 
+	 // apConfig.authmode =3;                     //è®¾ç½®åŠ å¯†æ¨¡å¼
+	  wifi_softap_set_config(&apConfig);        //é…ç½®
 
 	  dhcps_lease();
 }
-//³¤°´°´¼ü¿ªÊ¼ÅäÍø
+//é•¿æŒ‰æŒ‰é”®å¼€å§‹é…ç½‘
 static void Switch_LongPress_Handler( void )
 {
 #if tcp_server
@@ -1050,7 +977,7 @@ static void Switch_LongPress_Handler( void )
 		long_pass_flag=1;
 		os_timer_disarm(&sntp_timer);
 		os_timer_disarm(&check_ip_timer);
-/****************************ÅäÍøÖ¸Ê¾µÆ¿ªÊ¼ÉÁË¸*****************************************/
+/****************************é…ç½‘æŒ‡ç¤ºç¯å¼€å§‹é—ªçƒ*****************************************/
 		os_timer_disarm(&flash_light_timer);
 		os_timer_setfn(&flash_light_timer, (os_timer_func_t *)flash_light_timer_callback, NULL);
 		os_timer_arm(&flash_light_timer, 300, 1);//300ms
@@ -1066,7 +993,7 @@ static void Switch_LongPress_Handler( void )
 #endif
 }
 
-//¶Ì°´¿ªÆô/¶Ï¿ª¿ª¹Ø
+//çŸ­æŒ‰å¼€å¯/æ–­å¼€å¼€å…³
 static void Switch_ShortPress_Handler( void )
 {
 	if(long_pass_flag==2)
@@ -1095,7 +1022,7 @@ void ICACHE_FLASH_ATTR  gpio_init(void)
 {
 	 PIN_FUNC_SELECT(SMART_LED_PIN_MUX,SMART_LED_PIN_FUNC);//LED
 	 PIN_FUNC_SELECT(RELAY_PIN_MUX,RELAY_PIN_FUNC);//RELAY
-	 //°´¼üÅäÖÃ
+	 //æŒ‰é”®é…ç½®
 	switch_signle = key_init_single( SMART_KEY_PIN_NUM, SMART_KEY_PIN_MUX,
 									 SMART_KEY_PIN_FUNC,
 									  &Switch_LongPress_Handler ,
@@ -1112,7 +1039,7 @@ void ICACHE_FLASH_ATTR  gpio_init(void)
 /************************************************************************
 
 
-»ñÈ¡×Ö·û´®ÖĞÄ³¸ö×Ó×Ö·û´®µÄÊ××ÖÄ¸µÄÏÂ±ê
+è·å–å­—ç¬¦ä¸²ä¸­æŸä¸ªå­å­—ç¬¦ä¸²çš„é¦–å­—æ¯çš„ä¸‹æ ‡
 
 *************************************************************************/
 //
@@ -1152,7 +1079,7 @@ int  ICACHE_FLASH_ATTR GetSubStrPos(char *str1,char *str2)
 
 
 /***********************************************
- ³õÊ¼»¯
+ åˆå§‹åŒ–
  **********************************/
 void  ICACHE_FLASH_ATTR MQTT_Init()
 {
@@ -1170,7 +1097,7 @@ void  ICACHE_FLASH_ATTR MQTT_Init()
 	MQTT_OnData(&mqttClient, mqttDataCb);
 }
 
-/*************************************Á³ÉÏwifiºó¼ì²âIP*******************************************/
+/*************************************è„¸ä¸Šwifiåæ£€æµ‹IP*******************************************/
 void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 {
 	static uint8_t wifiStatus = STATION_IDLE,flag=0;
@@ -1185,7 +1112,7 @@ void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 		{
 			flag=0;
 			wifi_set_opmode(0x01);
-			 my_sntp_init();//»ñÈ¡ÍøÂçÊ±¼ä
+			 my_sntp_init();//è·å–ç½‘ç»œæ—¶é—´
 #if tcp_server
 			 station_server_init(&ipConfig.ip,8888);
 #else
@@ -1273,7 +1200,7 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 	uint8 data=0;
 	uint8 *buff=os_malloc(1000);
 	uint8 *cache=os_malloc(1000);
-	/***************************µ¼ÈëflashÊı¾İ²¢½âÎö****************************************/
+	/***************************å¯¼å…¥flashæ•°æ®å¹¶è§£æ****************************************/
 	if(strstr(list,"timer")!=NULL)
 	{
 		frist_pos=GetSubStrPos(list,"[");
@@ -1286,7 +1213,7 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 			else
 				data=buff[frist_pos+7]-'0';
 			frist_pos=GetSubStrPos(buff,"}");
-			os_strncpy(wifi_socket_timing[data],buff,frist_pos+1);//½ØÈ¡Ò»°üÊı¾İ{"time":"10:00,16:00,0034560,on","timer":2}
+			os_strncpy(wifi_socket_timing[data],buff,frist_pos+1);//æˆªå–ä¸€åŒ…æ•°æ®{"time":"10:00,16:00,0034560,on","timer":2}
 
 			os_strncpy(timing_ontime[data],wifi_socket_timing[data]+9,5);
 			os_strncpy(timing_offtime[data],wifi_socket_timing[data]+15,5);
@@ -1294,9 +1221,9 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 			os_strncpy(timing_timersta[data],wifi_socket_timing[data]+29,3);
 
 			os_memset(cache,0,sizeof(cache));
-			os_strncpy(cache,buff+frist_pos+2,os_strlen(buff)-frist_pos-2);//½«½ØÈ¡µÄÊı¾İ´æÔÚcacheÖĞ
-			os_memset(buff,0,sizeof(buff));//Çå¿Õbuff
-			os_strcpy(buff,cache);//½«½ØÈ¡µ½µÄÊı¾İÖØĞÂ¿½±´µ½buff
+			os_strncpy(cache,buff+frist_pos+2,os_strlen(buff)-frist_pos-2);//å°†æˆªå–çš„æ•°æ®å­˜åœ¨cacheä¸­
+			os_memset(buff,0,sizeof(buff));//æ¸…ç©ºbuff
+			os_strcpy(buff,cache);//å°†æˆªå–åˆ°çš„æ•°æ®é‡æ–°æ‹·è´åˆ°buff
 			//os_printf("buff=%s\r\n",buff);
 
 #if time_debug
@@ -1313,7 +1240,7 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 	}
 	os_free(buff);
 	os_free(cache);
-	/***************************¿ªÆôÈÎÎñ**********************************/
+	/***************************å¼€å¯ä»»åŠ¡**********************************/
 	os_timer_disarm(&pub_timer);
 	os_timer_setfn(&pub_timer, (os_timer_func_t *)pub_timer_callback, NULL);
 	os_timer_arm(&pub_timer, 200, 1);//200ms
@@ -1345,7 +1272,7 @@ void user_init(void)
 #if 0
 	os_printf("list=%s\r\n",list);
 #endif
- //¼ì²âµ½Á¬½ÓipÖ®ºóÁ¬½Ómqtt
+ //æ£€æµ‹åˆ°è¿æ¥ipä¹‹åè¿æ¥mqtt
 	check_ip();
 
 	wifi_set_sleep_type(MODEM_SLEEP_T);
