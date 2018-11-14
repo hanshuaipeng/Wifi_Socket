@@ -66,6 +66,7 @@ LOCAL os_timer_t flash_light_timer;
 uint8 mqtt_buff[200];				//mqtt接收数据缓存
 uint8 pub_topic[50],sub_topic[50];	//mqtt发布和订阅主题
 uint8 service_topic[50];			//向服务器返回状态主题
+uint8 pub_flag=0;
 uint8 on_off_flag=0;
 uint8 dev_sta=0;					///设备状态
 extern uint8 long_pass_flag;		//长按标志
