@@ -63,33 +63,33 @@
 LOCAL os_timer_t flash_light_timer;
 
 
-uint8 mqtt_buff[200];				//mqtt接收数据缓存
-uint8 pub_topic[50],sub_topic[50];	//mqtt发布和订阅主题
-uint8 service_topic[50];			//向服务器返回状态主题
+uint8 mqtt_buff[200];				//mqtt鎺ユ敹鏁版嵁缂撳瓨
+uint8 pub_topic[50],sub_topic[50];	//mqtt鍙戝竷鍜岃闃呬富棰�
+uint8 service_topic[50];			//鍚戞湇鍔″櫒杩斿洖鐘舵�佷富棰�
 uint8 pub_flag=0;
 uint8 on_off_flag=0;
-uint8 dev_sta=0;					///设备状态
-extern uint8 long_pass_flag;		//长按标志
+uint8 dev_sta=0;					///璁惧鐘舵��
+extern uint8 long_pass_flag;		//闀挎寜鏍囧織
 
 uint8 send_serv;
 
 extern uint8 tcp_send;
 
-uint8 local_ip[15];					//记录本地IP，用于station模式的tcp service
+uint8 local_ip[15];					//璁板綍鏈湴IP锛岀敤浜巗tation妯″紡鐨則cp service
 
-uint8 dev_sid[15];					//记录设备SID
+uint8 dev_sid[15];					//璁板綍璁惧SID
 
 
 LOCAL os_timer_t serv_timer;
 /*************************************
- *倒计时相关变量
+ *鍊掕鏃剁浉鍏冲彉閲�
  */
 
 LOCAL os_timer_t onoff_timer;
 uint16 sec=0,min=0;
 uint8 down_flag=0;
 /*************************************
- *定时相关变量
+ *瀹氭椂鐩稿叧鍙橀噺
  */
 
 typedef struct
@@ -107,16 +107,16 @@ tm now_timedate;
 LOCAL os_timer_t socket_timer;
 
 
-uint8 wifi_socket_timing[22][50];		//存储定时器数据
+uint8 wifi_socket_timing[22][50];		//瀛樺偍瀹氭椂鍣ㄦ暟鎹�
 
-uint8 now_time[10];						//记录当前时间
+uint8 now_time[10];						//璁板綍褰撳墠鏃堕棿
 
-uint8 timing_day[22][8];				//记录重复天数
-uint8 timing_ontime[22][6];			//记录定时开启时间
-uint8 timing_offtime[22][6];			//记录定时关闭时间
-uint8 timing_timersta[22][5];			//记录定时器状态
-uint8 list[1200];						//存储定时器列表
-uint8 timer=0;							//记录定时器序号
+uint8 timing_day[22][8];				//璁板綍閲嶅澶╂暟
+uint8 timing_ontime[22][6];			//璁板綍瀹氭椂寮�鍚椂闂�
+uint8 timing_offtime[22][6];			//璁板綍瀹氭椂鍏抽棴鏃堕棿
+uint8 timing_timersta[22][5];			//璁板綍瀹氭椂鍣ㄧ姸鎬�
+uint8 list[960];						//瀛樺偍瀹氭椂鍣ㄥ垪琛�
+uint8 timer=0;							//璁板綍瀹氭椂鍣ㄥ簭鍙�
 
 
 struct	softap_config	ap_config;
@@ -126,11 +126,11 @@ LOCAL esp_udp ssdp_udp;
 LOCAL struct espconn pssdpudpconn;
 LOCAL os_timer_t ssdp_time_serv;
 
-//按键相关
+//鎸夐敭鐩稿叧
 static struct keys_param switch_param;
 static struct single_key_param *switch_signle;
 
-char temp_str[30];    // 临时子串，查找字符串相关
+char temp_str[30];    // 涓存椂瀛愪覆锛屾煡鎵惧瓧绗︿覆鐩稿叧
 #if smartconfig
 	uint8_t  lan_buf[200];
 	uint16_t lan_buf_len;
@@ -155,8 +155,8 @@ void ICACHE_FLASH_ATTR  socket_timer_callback();
 MQTT_Client mqttClient;
 typedef unsigned long u32_t;
 static ETSTimer sntp_timer;
-//CRC16闂佸搫绋勭换婵嬫偘濞嗘挸绀勯柤鎭掑劜濞堬拷
-//CRC闂佸搫绋勭换婵嬫偘濞嗘劖濯寸�广儱瀚粔闈浢归敐鍛㈡繝锟介鍫濈鐎广儱绻掔粈澶娢旈崒娴㈣偐绱為崨鏉戞嵍闁靛鍎查崐锟�
+//CRC16闂備礁鎼粙鍕崲濠靛鍋樻繛鍡樻尭缁�鍕煠閹帒鍔滄繛鍫嫹
+//CRC闂備礁鎼粙鍕崲濠靛鍋樻繛鍡樺姈婵锟藉箍鍎辩�氼喚绮旈棃娴㈠綊鏁愰崨顖呫垺绻濋敓浠嬵敂閸繄顦悗骞垮劚缁绘帞绮堟径濞㈡棃宕掑ù銏ｅ亹缁辩偤宕ㄩ弶鎴炲祶闂侀潧顭堥崕鏌ュ磹閿燂拷
 uint16 ICACHE_FLASH_ATTR Ar_crc_16(uint8 *input,uint16 len)
 {
 	uint16 n = 0;
@@ -167,7 +167,7 @@ uint16 ICACHE_FLASH_ATTR Ar_crc_16(uint8 *input,uint16 len)
 	uint16 xor_out = 0x0000;
 
     crc_in = input[len - 2] * 256 + input[len - 1];
-    //os_printf("crc_in=0x%x\r\n",crc_in);// 濠电偞娼欓鍫ユ儊椤栨稓顩烽柨婵嗘川閸ㄦ娊鏌ㄥ☉妯绘拱濠⒀嶇畵瀹曪繝鎯傞惇姊抇in
+    //os_printf("crc_in=0x%x\r\n",crc_in);// 婵犵數鍋炲娆擃敄閸儲鍎婃い鏍ㄧ〒椤╃兘鏌ㄥ┑鍡樺窛闁搞劍濞婇弻銊モ槈濡粯鎷辨繝鈷�宥囩暤鐎规洩绻濋幆鍌炴儑濮婃妵in
 	for(n=0;n<(len-2);n++)
 	{
 		crc_re = crc_re ^ input[n];
@@ -185,7 +185,7 @@ uint16 ICACHE_FLASH_ATTR Ar_crc_16(uint8 *input,uint16 len)
 		}
 	}
 	crc_re = crc_re ^ xor_out;
-	//os_printf("crc_re=0x%x\r\n",crc_re);// 濠电偞娼欓鍫ユ儊椤栨稓顩烽柨婵嗘川閸ㄦ娊鏌ㄥ☉妯绘拱濠⒀嶇畵瀹曪繝鎯傞惇姊掗梺鍝勭▌缁绘繈鎮板▎鎴嫹濞戞瑯娈欏┑鈽呮嫹
+	//os_printf("crc_re=0x%x\r\n",crc_re);// 婵犵數鍋炲娆擃敄閸儲鍎婃い鏍ㄧ〒椤╃兘鏌ㄥ┑鍡樺窛闁搞劍濞婇弻銊モ槈濡粯鎷辨繝鈷�宥囩暤鐎规洩绻濋幆鍌炴儑濮婃帡姊洪崫鍕枌缂佺粯绻堥幃鏉库枎閹搭垱瀚规繛鎴炵懐濞堟瑥鈹戦埥鍛
 	if((crc_in == crc_re)||(crc_in == 0)){
 		return crc_re;
 	}
@@ -232,7 +232,7 @@ void sntpfn()
     } else
     {
 
-/***************************获取到网络时间 后开启定时任务**********************************/
+/***************************鑾峰彇鍒扮綉缁滄椂闂� 鍚庡紑鍚畾鏃朵换鍔�**********************************/
     	if(timer_start==0)
     	{
     		timer_start=1;
@@ -241,21 +241,21 @@ void sntpfn()
 			os_timer_arm(&socket_timer, 1000, 1);//1s
     	}
 /***********************************************************************************/
-    	os_strncpy(now_time,current_time+11,5);//保存  时：分
+    	os_strncpy(now_time,current_time+11,5);//淇濆瓨  鏃讹細鍒�
     	//os_printf("current time : %s\n", now_time);
 
-    	os_strncpy(chsec,current_time+17,2);//秒
-		os_strncpy(chmin,current_time+14,2);//分
-		os_strncpy(chhour,current_time+11,2);//时
-		os_strncpy(chwday,current_time,3);//周
+    	os_strncpy(chsec,current_time+17,2);//绉�
+		os_strncpy(chmin,current_time+14,2);//鍒�
+		os_strncpy(chhour,current_time+11,2);//鏃�
+		os_strncpy(chwday,current_time,3);//鍛�
 #if 0
-		os_strncpy(chmday,current_time+8,2);//天
-		os_strncpy(chmon,current_time+4,3);//月
-		os_strncpy(chyear,current_time+20,4);//年
+		os_strncpy(chmday,current_time+8,2);//澶�
+		os_strncpy(chmon,current_time+4,3);//鏈�
+		os_strncpy(chyear,current_time+20,4);//骞�
 
 		os_printf("current time : %s\n", current_time);
 
-		//月份转换
+		//鏈堜唤杞崲
 		if(strcmp(chmon,"Jan")==0)
 		{
 			now_timedate.tm_mon=1;
@@ -309,7 +309,7 @@ void sntpfn()
 		now_timedate.tm_hour=(chhour[0]-'0')*10+(chhour[1]-'0');
 		now_timedate.tm_min=(chmin[0]-'0')*10+(chmin[1]-'0');
 		now_timedate.tm_sec=(chsec[0]-'0')*10+(chsec[1]-'0');
-		//周转换
+		//鍛ㄨ浆鎹�
 		if(strcmp(chwday,"Mon")==0)
 			now_timedate.tm_wday=1+'0';
 		else if(strcmp(chwday,"Tue")==0)
@@ -341,7 +341,7 @@ void ICACHE_FLASH_ATTR  wifiConnectCb(uint8_t status)
 {
 
 
-	/*struct ip_info info; //用于获取IP地址的信息
+	/*struct ip_info info; //鐢ㄤ簬鑾峰彇IP鍦板潃鐨勪俊鎭�
     if(status == STATION_GOT_IP){
     	wifi_get_ip_info(STATON_IF,&info);
     	station_server_init(&info.ip,8888);
@@ -389,8 +389,8 @@ void mqttPublishedCb(uint32_t *args)
 void ICACHE_FLASH_ATTR CharToByte(uint8* pChar,uint8* pByte)
 {
 	uint8 h,l;
-	h=pChar[0];//婵°倕鍊圭湁缂傚稄鎷�
-	l=pChar[1];//婵炶揪绲界花鑲╃礊閿燂拷
+	h=pChar[0];//濠德板�曢崐鍦箒缂傚倸绋勯幏锟�
+	l=pChar[1];//濠电偠鎻徊鐣岃姳閼测晝绀婇柨鐕傛嫹
 	if(l>='0' && l<='9')
 		l=l-'0';
 	else if(l>='a' && l<='f')
@@ -496,7 +496,7 @@ void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const cha
     os_free(dataBuf);
 }
 
-/******************倒计时回调******************************/
+/******************鍊掕鏃跺洖璋�******************************/
 void  ICACHE_FLASH_ATTR onoff_timer_callback()
 {
 	if(sec==0)
@@ -530,7 +530,7 @@ void  ICACHE_FLASH_ATTR load_flash(uint32 des_addr,uint32* data)
 	spi_flash_read(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data));
 }
 
-/***********************定时器******************************/
+/***********************瀹氭椂鍣�******************************/
 void  ICACHE_FLASH_ATTR socket_timer_callback()
 {
 	uint8 i;
@@ -548,12 +548,12 @@ void  ICACHE_FLASH_ATTR socket_timer_callback()
 				if(strstr(timing_ontime[i],now_time)!=NULL&&now_timedate.tm_sec==0)
 				{
 					on_off_flag=1;
-					dev_sta=1;//时间到，打开
+					dev_sta=1;//鏃堕棿鍒帮紝鎵撳紑
 				}
 				if(strstr(timing_offtime[i],now_time)!=NULL&&now_timedate.tm_sec==0)
 				{
 					on_off_flag=1;
-					dev_sta=0;//时间到，关闭
+					dev_sta=0;//鏃堕棿鍒帮紝鍏抽棴
 				}
 			}
 		}
@@ -576,7 +576,7 @@ void  ICACHE_FLASH_ATTR socket_timer_callback()
 
 
 
-/************************获取定时器个数********************************/
+/************************鑾峰彇瀹氭椂鍣ㄤ釜鏁�********************************/
 uint8 ICACHE_FLASH_ATTR  get_timer()
 {
 	uint8 i,count=0;
@@ -590,7 +590,7 @@ uint8 ICACHE_FLASH_ATTR  get_timer()
 //	os_printf("count num is:%d\r\n",count);
 	return count;
 }
-/****************************拼定时器列表*************************************************/
+/****************************鎷煎畾鏃跺櫒鍒楄〃*************************************************/
 void ICACHE_FLASH_ATTR  send_list()
 {
 	uint8 i,count=0;
@@ -610,19 +610,19 @@ void ICACHE_FLASH_ATTR  send_list()
 	os_printf("%s\n", list);
 #endif
 }
-void ICACHE_FLASH_ATTR  serv_timer_callback()//用于发送状态给服务器，服务器保存当前状态
+void ICACHE_FLASH_ATTR  serv_timer_callback()//鐢ㄤ簬鍙戦�佺姸鎬佺粰鏈嶅姟鍣紝鏈嶅姟鍣ㄤ繚瀛樺綋鍓嶇姸鎬�
 {
 	send_serv=1;
 	os_timer_disarm(&serv_timer);
 	os_printf("send to serv\r\n");
 }
-/****************************************收到数据开始处理*******************************************/
+/****************************************鏀跺埌鏁版嵁寮�濮嬪鐞�*******************************************/
 void ICACHE_FLASH_ATTR  pub_timer_callback()
 {
 	uint8 frist_pos=0;
 	uint16 i;
 	uint8 shi,fen,miao;
-	static uint8 pub_buff[240];		//发布数据缓存
+	static uint8 pub_buff[240];		//鍙戝竷鏁版嵁缂撳瓨
 	static uint8 state[10];
 	static uint8 ip[4]={192,168,1,3};
 	os_memset(state,0,os_strlen(state));
@@ -633,7 +633,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 		os_memset(pub_buff,0,os_strlen(pub_buff));
 		if(strstr(mqtt_buff,dev_sid)!=NULL)
 		{
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_count_down\"")!=NULL)//倒计时
+			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_count_down\"")!=NULL)//鍊掕鏃�
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"data\":");
 
@@ -679,7 +679,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-			/****************************获取倒计时状态**********************************/
+			/****************************鑾峰彇鍊掕鏃剁姸鎬�**********************************/
 			if(strstr(mqtt_buff,"\"wifi_socket_read_down\"")!=NULL)
 			{
 				if(dev_sta==1)
@@ -701,20 +701,20 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-			/*****************************设置定时****************************************************/
+			/*****************************璁剧疆瀹氭椂****************************************************/
 			//{"cmd":"wifi_socket_timing","day":"1234567","ontime":"10:00","offtime":"19:00","timer":1,"timer_state":"on","sid":"12345678"}
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//定时器
+			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//瀹氭椂鍣�
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
 				if(mqtt_buff[frist_pos+9]>='0'&&mqtt_buff[frist_pos+9]<='9')
 				{
-					timer=(mqtt_buff[frist_pos+8]-'0')*10+(mqtt_buff[frist_pos+9]-'0');//有多少个定时
+					timer=(mqtt_buff[frist_pos+8]-'0')*10+(mqtt_buff[frist_pos+9]-'0');//鏈夊灏戜釜瀹氭椂
 				}
 				else
-					timer=(mqtt_buff[frist_pos+8]-'0');//有多少个定时
+					timer=(mqtt_buff[frist_pos+8]-'0');//鏈夊灏戜釜瀹氭椂
 
-				/******************************存定时列表******************************************/
-				//获取定时数量，如果大于20个，清空当前的定时，上传超过20
+				/******************************瀛樺畾鏃跺垪琛�******************************************/
+				//鑾峰彇瀹氭椂鏁伴噺锛屽鏋滃ぇ浜�20涓紝娓呯┖褰撳墠鐨勫畾鏃讹紝涓婁紶瓒呰繃20
 				if(get_timer()>19&&timer==0)
 				{
 					os_memset(pub_buff,0,os_strlen(pub_buff));
@@ -722,19 +722,19 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				}
 				else
 				{
-					if(timer==0)//代表新建的定时器
+					if(timer==0)//浠ｈ〃鏂板缓鐨勫畾鏃跺櫒
 					{
 						for(i=1;i<24;i++)
 						{
 							if(strstr(wifi_socket_timing[i],"time")==NULL)
 							{
-								timer=i;//保存新建定时的位置
+								timer=i;//淇濆瓨鏂板缓瀹氭椂鐨勪綅缃�
 								break;
 							}
 						}
 					}
 					frist_pos=GetSubStrPos(mqtt_buff,"\"day\":");
-					os_strncpy(timing_day[timer],mqtt_buff+frist_pos+7,7);//保存第N个定时的重复的天数
+					os_strncpy(timing_day[timer],mqtt_buff+frist_pos+7,7);//淇濆瓨绗琋涓畾鏃剁殑閲嶅鐨勫ぉ鏁�
 
 					if(strstr(mqtt_buff,"\"timer_state\":\"on\"")!=NULL)
 					{
@@ -765,7 +765,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 						frist_pos=GetSubStrPos(mqtt_buff,"\"offtime\":");
 						os_strncpy(timing_offtime[timer],mqtt_buff+frist_pos+11,5);
 					}
-					/*************************************开启定时任务*******************************************/
+					/*************************************寮�鍚畾鏃朵换鍔�*******************************************/
 					os_timer_disarm(&socket_timer);
 					os_timer_setfn(&socket_timer, (os_timer_func_t *)socket_timer_callback, NULL);
 					os_timer_arm(&socket_timer, 1000, 1);//1s
@@ -791,7 +791,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 
 			}
-/************************************读定时列表*****************************************************/
+/************************************璇诲畾鏃跺垪琛�*****************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read_timing\"")!=NULL)
 			{
 				send_list();
@@ -812,7 +812,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,list, os_strlen(list), 0, 0);
 
 			}
-/*****************************************删除定时*****************************************************/
+/*****************************************鍒犻櫎瀹氭椂*****************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_del_timing\"")!=NULL)
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
@@ -821,8 +821,8 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					timer=(mqtt_buff[frist_pos+8]-'0')*10+(mqtt_buff[frist_pos+9]-'0');//
 				}
 				else
-					timer=(mqtt_buff[frist_pos+8]-'0');//获取要删除的定时
-				/****************************全清空该定时器的状态******************************************/
+					timer=(mqtt_buff[frist_pos+8]-'0');//鑾峰彇瑕佸垹闄ょ殑瀹氭椂
+				/****************************鍏ㄦ竻绌鸿瀹氭椂鍣ㄧ殑鐘舵��******************************************/
 				os_memset(wifi_socket_timing[timer],0,os_strlen(wifi_socket_timing[timer]));
 				os_memset(timing_day[timer],0,os_strlen(timing_day[timer]));
 				os_memset(timing_ontime[timer],0,os_strlen(timing_ontime[timer]));
@@ -843,7 +843,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 
 			}
-/************************************读开关状态************************************************************/
+/************************************璇诲紑鍏崇姸鎬�************************************************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read\"")!=NULL)
 			{
 				on_off_flag=1;
@@ -865,13 +865,13 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 				ota_start_Upgrade(ip, 80,"8266update/WiFi_Socket/");
 			}
-/**********************获取IP*************************/
+/**********************鑾峰彇IP*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_equipment_ping\"")!=NULL)
 			{
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_equipment_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
 				MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-/****************清空定时列表*************************/
+/****************娓呯┖瀹氭椂鍒楄〃*************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_clear\"")!=NULL)
 			{
 				if(spi_flash_erase_sector(CFG_LOCATION + 5)==SPI_FLASH_RESULT_OK)
@@ -879,7 +879,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					system_restart();
 				}
 			}
-/**********************开关**************************/
+/**********************寮�鍏�**************************/
 			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket\"")!=NULL)
 			{
 				if(strstr(mqtt_buff,"\"on\"")!=NULL)
@@ -918,7 +918,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 #else
 					WIFI_UDP_SendNews(pub_buff,os_strlen(pub_buff));
 #endif
-					//***********向服务器，3S后发送数据给服务器保存数据，连续触发UDP开关后，会不断刷新清零定时器*************************/
+					//***********鍚戞湇鍔″櫒锛�3S鍚庡彂閫佹暟鎹粰鏈嶅姟鍣ㄤ繚瀛樻暟鎹紝杩炵画瑙﹀彂UDP寮�鍏冲悗锛屼細涓嶆柇鍒锋柊娓呴浂瀹氭椂鍣�*************************/
 			os_timer_disarm(&serv_timer);
 			os_timer_setfn(&serv_timer, (os_timer_func_t *)serv_timer_callback, NULL);
 			os_timer_arm(&serv_timer, 3000, 1);//3000ms
@@ -937,7 +937,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 	}
 
 }
-/********************************配网指示灯闪烁回调函数**********************************************/
+/********************************閰嶇綉鎸囩ず鐏棯鐑佸洖璋冨嚱鏁�**********************************************/
 void ICACHE_FLASH_ATTR  flash_light_timer_callback()
 {
 	static uint8 flag=0;
@@ -959,7 +959,7 @@ void ICACHE_FLASH_ATTR dhcps_lease(void)
 
 	struct	dhcps_lease	dhcp_lease;
 	struct ip_info info;
-	wifi_softap_dhcps_stop();//设置前关闭DHCP
+	wifi_softap_dhcps_stop();//璁剧疆鍓嶅叧闂璂HCP
 	IP4_ADDR(&dhcp_lease.start_ip,192,168,5,1);
 
 	IP4_ADDR(&dhcp_lease.end_ip,192,168,5,100);
@@ -975,34 +975,34 @@ void ICACHE_FLASH_ATTR dhcps_lease(void)
 }
 
 /*
- * 函数名:void Wifi_AP_Init()
- * 功能wifi_ap初始化
+ * 鍑芥暟鍚�:void Wifi_AP_Init()
+ * 鍔熻兘wifi_ap鍒濆鍖�
  */
 void ICACHE_FLASH_ATTR WIFIAPInit()
 {
     struct softap_config apConfig;
 
-    /***************************模式设置************************************/
-         if(wifi_set_opmode(0x03)){          //  设置为AP模式
+    /***************************妯″紡璁剧疆************************************/
+         if(wifi_set_opmode(0x03)){          //  璁剧疆涓篈P妯″紡
 
          }else{
 
          }
-    /***************************名字设通道置************************************/
+    /***************************鍚嶅瓧璁鹃�氶亾缃�************************************/
 	  os_bzero(&apConfig, sizeof(struct softap_config));
 	  wifi_softap_get_config(&apConfig);
-	  apConfig.ssid_len=0;                      //设置ssid长度
+	  apConfig.ssid_len=0;                      //璁剧疆ssid闀垮害
 	  os_memset(apConfig.ssid,' ',strlen(apConfig.ssid));
 
-	  os_sprintf(apConfig.ssid,"grasp_socket-%s",dev_sid);			//设置ssid名字
+	  os_sprintf(apConfig.ssid,"grasp_socket-%s",dev_sid);			//璁剧疆ssid鍚嶅瓧
 
-	 // os_strcpy(apConfig.password,"12345678");  //设置密码
-	 // apConfig.authmode =3;                     //设置加密模式
-	  wifi_softap_set_config(&apConfig);        //配置
+	 // os_strcpy(apConfig.password,"12345678");  //璁剧疆瀵嗙爜
+	 // apConfig.authmode =3;                     //璁剧疆鍔犲瘑妯″紡
+	  wifi_softap_set_config(&apConfig);        //閰嶇疆
 
 	  dhcps_lease();
 }
-//长按按键开始配网
+//闀挎寜鎸夐敭寮�濮嬮厤缃�
 static void Switch_LongPress_Handler( void )
 {
 #if tcp_server
@@ -1021,7 +1021,7 @@ static void Switch_LongPress_Handler( void )
 		long_pass_flag=1;
 		os_timer_disarm(&sntp_timer);
 		os_timer_disarm(&check_ip_timer);
-/****************************配网指示灯开始闪烁*****************************************/
+/****************************閰嶇綉鎸囩ず鐏紑濮嬮棯鐑�*****************************************/
 		os_timer_disarm(&flash_light_timer);
 		os_timer_setfn(&flash_light_timer, (os_timer_func_t *)flash_light_timer_callback, NULL);
 		os_timer_arm(&flash_light_timer, 300, 1);//300ms
@@ -1037,7 +1037,7 @@ static void Switch_LongPress_Handler( void )
 #endif
 }
 
-//短按开启/断开开关
+//鐭寜寮�鍚�/鏂紑寮�鍏�
 static void Switch_ShortPress_Handler( void )
 {
 	if(long_pass_flag==2)
@@ -1066,7 +1066,7 @@ void ICACHE_FLASH_ATTR  gpio_init(void)
 {
 	 PIN_FUNC_SELECT(SMART_LED_PIN_MUX,SMART_LED_PIN_FUNC);//LED
 	 PIN_FUNC_SELECT(RELAY_PIN_MUX,RELAY_PIN_FUNC);//RELAY
-	 //按键配置
+	 //鎸夐敭閰嶇疆
 	switch_signle = key_init_single( SMART_KEY_PIN_NUM, SMART_KEY_PIN_MUX,
 									 SMART_KEY_PIN_FUNC,
 									  &Switch_LongPress_Handler ,
@@ -1083,7 +1083,7 @@ void ICACHE_FLASH_ATTR  gpio_init(void)
 /************************************************************************
 
 
-获取字符串中某个子字符串的首字母的下标
+鑾峰彇瀛楃涓蹭腑鏌愪釜瀛愬瓧绗︿覆鐨勯瀛楁瘝鐨勪笅鏍�
 
 *************************************************************************/
 //
@@ -1123,7 +1123,7 @@ int  ICACHE_FLASH_ATTR GetSubStrPos(char *str1,char *str2)
 
 
 /***********************************************
- 初始化
+ 鍒濆鍖�
  **********************************/
 void  ICACHE_FLASH_ATTR MQTT_Init()
 {
@@ -1141,7 +1141,7 @@ void  ICACHE_FLASH_ATTR MQTT_Init()
 	MQTT_OnData(&mqttClient, mqttDataCb);
 }
 
-/*************************************脸上wifi后检测IP*******************************************/
+/*************************************鑴镐笂wifi鍚庢娴婭P*******************************************/
 void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 {
 	static uint8_t wifiStatus = STATION_IDLE,flag=0;
@@ -1156,7 +1156,7 @@ void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 		{
 			flag=0;
 			wifi_set_opmode(0x01);
-			 my_sntp_init();//获取网络时间
+			 my_sntp_init();//鑾峰彇缃戠粶鏃堕棿
 #if tcp_server
 			 station_server_init(&ipConfig.ip,8888);
 #else
@@ -1240,10 +1240,10 @@ user_rf_cal_sector_set(void)
 
 void  ICACHE_FLASH_ATTR to_scan(void)
 {
-	uint8 i,frist_pos=0,len=0;
+	uint8 i,frist_pos=0;
 	uint8 data=0;
-	uint8 *buff=os_malloc(1000);
-	uint8 *cache=os_malloc(1000);
+	uint8 buff[1000];
+	uint8 cache[1000];
 	/***************************导入flash数据并解析****************************************/
 	if(strstr(list,"timer")!=NULL)
 	{
@@ -1251,39 +1251,37 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 		os_strncpy(buff,list+frist_pos+1,os_strlen(list)-frist_pos-1);
 		for(i=0;i<22;i++)
 		{
-			frist_pos=GetSubStrPos(buff,"timer");
-			if(buff[frist_pos+8]>='0'&&buff[frist_pos+8]<='9')
-				data=(buff[frist_pos+7]-'0')*10+(buff[frist_pos+8]-'0');
-			else
-				data=buff[frist_pos+7]-'0';
-			frist_pos=GetSubStrPos(buff,"}");
-			os_strncpy(wifi_socket_timing[data],buff,frist_pos+1);//截取一包数据{"time":"10:00,16:00,0034560,on","timer":2}
+			if(strstr(buff,"time")!=NULL)
+			{
+				frist_pos=GetSubStrPos(buff,"timer");
+				if(buff[frist_pos+8]>='0'&&buff[frist_pos+8]<='9')
+					data=(buff[frist_pos+7]-'0')*10+(buff[frist_pos+8]-'0');
+				else
+					data=buff[frist_pos+7]-'0';
+				frist_pos=GetSubStrPos(buff,"}");
+				os_strncpy(wifi_socket_timing[data],buff,frist_pos+1);//截取一包数据{"time":"10:00,16:00,0034560,on","timer":2}
 
-			os_strncpy(timing_ontime[data],wifi_socket_timing[data]+9,5);
-			os_strncpy(timing_offtime[data],wifi_socket_timing[data]+15,5);
-			os_strncpy(timing_day[data],wifi_socket_timing[data]+21,7);
-			os_strncpy(timing_timersta[data],wifi_socket_timing[data]+29,3);
+				os_strncpy(timing_ontime[data],wifi_socket_timing[data]+9,5);
+				os_strncpy(timing_offtime[data],wifi_socket_timing[data]+15,5);
+				os_strncpy(timing_day[data],wifi_socket_timing[data]+21,7);
+				os_strncpy(timing_timersta[data],wifi_socket_timing[data]+29,3);
 
-			os_memset(cache,0,sizeof(cache));
-			os_strncpy(cache,buff+frist_pos+2,os_strlen(buff)-frist_pos-2);//将截取的数据存在cache中
-			os_memset(buff,0,sizeof(buff));//清空buff
-			os_strcpy(buff,cache);//将截取到的数据重新拷贝到buff
-			//os_printf("buff=%s\r\n",buff);
+				os_bzero(cache,sizeof(cache));
+				os_strncpy(cache,buff+frist_pos+2,os_strlen(buff)-frist_pos-2);//将截取的数据存在cache中
+				os_bzero(buff,sizeof(buff));//清空buff
+				os_strcpy(buff,cache);//将截取到的数据重新拷贝到buff
+				//os_printf("buff=%s\r\n",buff);
 
-#if time_debug
-			os_printf("wifi_socket_timing[%d]=%s\r\n",data,wifi_socket_timing[data]);
-			os_printf("timing_ontime[%d]=%s\r\n",data,timing_ontime[data]);
-			os_printf("timing_offtime[%d]=%s\r\n",data,timing_offtime[data]);
-			os_printf("timing_day[%d]=%s\r\n",data,timing_day[data]);
-			os_printf("timing_timersta[%d]=%s\r\n",data,timing_timersta[data]);
+#if 0
+				os_printf("wifi_socket_timing[%d]=%s\r\n",data,wifi_socket_timing[data]);
+				os_printf("timing_ontime[%d]=%s\r\n",data,timing_ontime[data]);
+				os_printf("timing_offtime[%d]=%s\r\n",data,timing_offtime[data]);
+				os_printf("timing_day[%d]=%s\r\n",data,timing_day[data]);
+				os_printf("timing_timersta[%d]=%s\r\n",data,timing_timersta[data]);
 #endif
-			len=os_strlen(buff);
-			if(len<5)
-				break;
+			}
 		}
 	}
-	os_free(buff);
-	os_free(cache);
 	/***************************开启任务**********************************/
 	os_timer_disarm(&pub_timer);
 	os_timer_setfn(&pub_timer, (os_timer_func_t *)pub_timer_callback, NULL);
@@ -1316,7 +1314,7 @@ void user_init(void)
 #if 0
 	os_printf("list=%s\r\n",list);
 #endif
- //检测到连接ip之后连接mqtt
+ //妫�娴嬪埌杩炴帴ip涔嬪悗杩炴帴mqtt
 	check_ip();
 
 	wifi_set_sleep_type(MODEM_SLEEP_T);
