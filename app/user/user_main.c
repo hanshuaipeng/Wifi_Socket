@@ -431,7 +431,7 @@ void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const cha
 					case 3:
 						if(spi_flash_write(0x78000+900,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
 						{
-							//system_restart();
+							system_restart();
 						}
 						break;
 					default :break;
