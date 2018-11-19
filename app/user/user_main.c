@@ -88,6 +88,11 @@ LOCAL os_timer_t serv_timer;
 LOCAL os_timer_t onoff_timer;
 uint16 sec=0,min=0;
 uint8 down_flag=0;
+
+
+uint16 cycle_on_min=0,cycle_off_min=0;
+uint8 cycle_on_sec=1,cycle_off_sec=1;
+uint8 cycle=0;
 /*************************************
  *¶¨Ê±Ïà¹Ø±äÁ¿
  */
@@ -461,16 +466,38 @@ void  ICACHE_FLASH_ATTR onoff_timer_callback()
 	{
 		if(min==0)
 		{
-			if(down_flag==1)
+			if(cycle==1)//Èç¹û¿ªÆôÑ­»·µ¹¼ÆÊ±
 			{
-				dev_sta=1;
+
+				if(dev_sta==1)//Èç¹ûµ±Ç°×´Ì¬ÊÇ¿ª£¬¹Ø±Õ²å×ù£¬ÖØÐÂ¸³Öµ¹Ø±ÕÊ±¼ä
+				{
+					min=cycle_off_min;
+					sec=cycle_off_sec;
+					dev_sta=0;
+				}
+				else
+				{
+					min=cycle_on_min;
+					sec=cycle_on_sec;
+					dev_sta=1;
+				}
+				//os_printf("min=%d,sec=%d\r\n",min,sec);
+				on_off_flag=1;
+				return;
 			}
-			else
-				dev_sta=0;
-			on_off_flag=1;
-			min=0;
-			os_timer_disarm(&onoff_timer);
-			return;
+			else//µ¹¼ÆÊ±
+			{
+				if(down_flag==1)
+				{
+					dev_sta=1;
+				}
+				else
+					dev_sta=0;
+				on_off_flag=1;
+				min=0;
+				os_timer_disarm(&onoff_timer);
+				return;
+			}
 		}
 		sec=60;
 		min--;
@@ -579,7 +606,7 @@ void ICACHE_FLASH_ATTR  serv_timer_callback()//ÓÃÓÚ·¢ËÍ×´Ì¬¸ø·þÎñÆ÷£¬·þÎñÆ÷±£´æµ
 void ICACHE_FLASH_ATTR  pub_timer_callback()
 {
 	uint8 frist_pos=0;
-	uint16 i;
+	uint8 i;
 	uint8 shi,fen,miao;
 	static uint8 pub_buff[240];		//·¢²¼Êý¾Ý»º´æ
 	static uint8 state[10];
@@ -639,7 +666,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
 /****************************»ñÈ¡µ¹¼ÆÊ±×´Ì¬**********************************/
-			if(strstr(mqtt_buff,"\"wifi_socket_read_down\"")!=NULL)
+			else if(strstr(mqtt_buff,"\"wifi_socket_read_down\"")!=NULL)
 			{
 				if(dev_sta==1)
 				{
@@ -647,7 +674,16 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				}
 				else
 					os_strcpy(state,"on");
-				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_read_down_ack\",\"state\":\"%s\",\"data\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",state,min/60,min%60,sec,dev_sid);
+				if(cycle==1)
+				{
+					fen=miao=0;
+				}
+				else
+				{
+					fen=min;
+					miao=sec;
+				}
+				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_read_down_ack\",\"state\":\"%s\",\"data\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",state,fen/60,fen%60,miao,dev_sid);
 				if(tcp_send==1)
 				{
 					tcp_send=0;
@@ -662,7 +698,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 			}
 /*****************************ÉèÖÃ¶¨Ê±****************************************************/
 			//{"cmd":"wifi_socket_timing","day":"1234567","ontime":"10:00","offtime":"19:00","timer":1,"timer_state":"on","sid":"12345678"}
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//¶¨Ê±Æ÷
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_timing\"")!=NULL)//¶¨Ê±Æ÷
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
 				if(mqtt_buff[frist_pos+9]>='0'&&mqtt_buff[frist_pos+9]<='9')
@@ -751,7 +787,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 			}
 /************************************¶Á¶¨Ê±ÁÐ±í*****************************************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read_timing\"")!=NULL)
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read_timing\"")!=NULL)
 			{
 				send_list();
 
@@ -772,7 +808,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 			}
 /*****************************************É¾³ý¶¨Ê±*****************************************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_del_timing\"")!=NULL)
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_del_timing\"")!=NULL)
 			{
 				frist_pos=GetSubStrPos(mqtt_buff,"\"timer\":");
 				if(mqtt_buff[frist_pos+9]>='0'&&mqtt_buff[frist_pos+9]<='9')
@@ -803,12 +839,12 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 			}
 /************************************¶Á¿ª¹Ø×´Ì¬************************************************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read\"")!=NULL)
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_read\"")!=NULL)
 			{
 				on_off_flag=1;
 			}
 /*****************************************ota**********************************************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_update\"")!=NULL)
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_update\"")!=NULL)
 			{
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_update_ack\",\"sid\":\"%s\"}",dev_sid);
 				if(tcp_send==1)
@@ -825,21 +861,21 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				ota_start_Upgrade(ip, 80,"8266update/WiFi_Socket/");
 			}
 /**********************»ñÈ¡IP*************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_equipment_ping\"")!=NULL)
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_equipment_ping\"")!=NULL)
 			{
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_equipment_ping_ack\",\"ip\":\"%s\",\"sid\":\"%s\"}",local_ip,dev_sid);
 				MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
-			/****************Çå¿Õ¶¨Ê±ÁÐ±í*************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_clear\"")!=NULL)
+/****************Çå¿Õ¶¨Ê±ÁÐ±í*************************/
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_clear\"")!=NULL)
 			{
 				if(spi_flash_erase_sector(CFG_LOCATION + 5)==SPI_FLASH_RESULT_OK)
 				{
 					system_restart();
 				}
 			}
-			/**********************¿ª¹Ø**************************/
-			if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket\"")!=NULL)
+/**********************¿ª¹Ø**************************/
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket\"")!=NULL)
 			{
 				if(strstr(mqtt_buff,"\"on\"")!=NULL)
 				{
@@ -851,9 +887,95 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				}
 				on_off_flag=1;
 			}
-		}
+/*
+ * 	uint16 cycle_on_min=0,cycle_off_min=0;
+	uint8 cycle_on_sec=0,cycle_off_sec=0;
+	uint8 cycle;
+ */
+/********************************Ñ­»·¿ª¹Ø******************************************/
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_cycle\"")!=NULL)
+			{
+				frist_pos=GetSubStrPos(mqtt_buff,"\"on_time\":");
+				shi=(mqtt_buff[frist_pos+11]-'0')*10+(mqtt_buff[frist_pos+12]-'0');
+				fen=(mqtt_buff[frist_pos+14]-'0')*10+(mqtt_buff[frist_pos+15]-'0');
+				miao=(mqtt_buff[frist_pos+17]-'0')*10+(mqtt_buff[frist_pos+18]-'0');
+				cycle_on_min=shi*60+fen;
+				cycle_on_sec=miao;
 
+				frist_pos=GetSubStrPos(mqtt_buff,"\"off_time\":");
+				shi=(mqtt_buff[frist_pos+12]-'0')*10+(mqtt_buff[frist_pos+13]-'0');
+				fen=(mqtt_buff[frist_pos+15]-'0')*10+(mqtt_buff[frist_pos+16]-'0');
+				miao=(mqtt_buff[frist_pos+18]-'0')*10+(mqtt_buff[frist_pos+19]-'0');
+				cycle_off_min=shi*60+fen;
+				cycle_off_sec=miao;
+
+				if(dev_sta==1)//Èç¹ûµ±Ç°×´Ì¬ÊÇ¿ª£¬Ôò³õÊ¼»¯¹Ø±ÕÊ±¼ä
+				{
+					min=cycle_off_min;
+					sec=cycle_off_sec;
+				}
+				else
+				{
+					min=cycle_on_min;
+					sec=cycle_on_sec;
+				}
+				if(strstr(mqtt_buff,"\"state\":\"on\"")!=NULL)
+				{
+					cycle=1;
+					os_timer_disarm(&onoff_timer);
+					os_timer_setfn(&onoff_timer, (os_timer_func_t *)onoff_timer_callback, NULL);
+					os_timer_arm(&onoff_timer, 1000, 1);//1000ms
+					os_strcpy(state,"on");
+				}
+				if(strstr(mqtt_buff,"\"state\":\"off\"")!=NULL)
+				{
+					cycle=0;
+					sec=0;
+					min=0;
+					os_timer_disarm(&onoff_timer);
+					os_strcpy(state,"off");
+				}
+
+				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_cycle_ack\",\"state\":\"%s\",\"on_time\":\"%02d,%02d,%02d\",\"off_time\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",
+						state,cycle_on_min/60,cycle_on_min%60,cycle_on_sec,cycle_off_min/60,cycle_off_min%60,cycle_off_sec,dev_sid);
+				if(tcp_send==1)
+				{
+					tcp_send=0;
+	#if tcp_server
+					WIFI_TCP_SendNews(pub_buff,os_strlen(pub_buff));
+	#else
+					WIFI_UDP_SendNews(pub_buff,os_strlen(pub_buff));
+	#endif
+				}
+				else
+					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
+			}
+/****************************»ñÈ¡Ñ­»·×´Ì¬**********************************/
+			else if(strstr(mqtt_buff,"\"wifi_socket_cycle_read\"")!=NULL)
+			{
+				if(cycle==1)
+				{
+					os_strcpy(state,"on");
+				}
+				else
+					os_strcpy(state,"off");
+				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_cycle_ack\",\"state\":\"%s\",\"on_time\":\"%02d,%02d,%02d\",\"off_time\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",
+										state,cycle_on_min/60,cycle_on_min%60,cycle_on_sec,cycle_off_min/60,cycle_off_min%60,cycle_off_sec,dev_sid);
+				if(tcp_send==1)
+				{
+					tcp_send=0;
+#if tcp_server
+					WIFI_TCP_SendNews(pub_buff,os_strlen(pub_buff));
+#else
+					WIFI_UDP_SendNews(pub_buff,os_strlen(pub_buff));
+#endif
+				}
+				else
+					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
+			}
+		}
 	}
+
 	if(on_off_flag==1)
 	{
 		if(dev_sta==0)
