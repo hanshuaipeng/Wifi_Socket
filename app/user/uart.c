@@ -47,6 +47,37 @@ os_event_t    uart_recvTaskQueue[uart_recvTaskQueueLen];
 #define DBG1 uart1_sendStr_no_wait
 #define DBG2 os_printf
 
+uint32 pf=0;//BIT7取反次数
+uint32 pulse=0;//一度电脉冲数量
+uint8 hlw_8032[24];
+uint32 voltage[3];//voltage[0]电压参数， voltage[1]电压
+uint32 current[3];//current[0]电流参数，current[1]电流
+uint32 power[3];// power[0]功率参数，power[1]功率
+/*hlw_8032[0]		状态寄存器;
+ *hlw_8032[1]		检测寄存器;
+ *hlw_8032[2]		电压参数寄存器高位voltage[0]=(hlw_8032[2]<<16)+(hlw_8032[3]<<8)+hlw_8032[4]
+ *hlw_8032[3]		电压参数寄存器中位
+ *hlw_8032[4]		电压参数寄存器低位
+ *hlw_8032[5]		电压寄存器高位voltage[1]=(hlw_8032[5]<<16)+(hlw_8032[6]<<8)+hlw_8032[7]
+ *hlw_8032[6]		电压寄存器中位
+ *hlw_8032[7]		电压寄存器低位
+ *hlw_8032[8]		电流参数寄存器高位current[0]=(hlw_8032[8]<<16)+(hlw_8032[9]<<8)+hlw_8032[10]
+ *hlw_8032[9]		电流参数寄存器中位
+ *hlw_8032[10]		电流参数寄存器低位
+ *hlw_8032[11]		电流寄存器高位current[1]=(hlw_8032[11]<<16)+(hlw_8032[12]<<8)+hlw_8032[13]
+ *hlw_8032[12]		电流寄存器中位
+ *hlw_8032[13]		电流寄存器低位
+ *hlw_8032[14]		功率参数寄存器高位power[0]=(hlw_8032[14]<<16)+(hlw_8032[15]<<8)+hlw_8032[16]
+ *hlw_8032[15]		功率参数寄存器中位
+ *hlw_8032[16]		功率参数寄存器低位
+ *hlw_8032[17]		功率寄存器高位power[1]=(hlw_8032[17]<<16)+(hlw_8032[18]<<8)+hlw_8032[19]
+ *hlw_8032[18]		功率寄存器中位
+ *hlw_8032[19]		功率寄存器低位
+ *hlw_8032[20]		数据更新寄存器
+ *hlw_8032[21]		PF寄存器高位
+ *hlw_8032[22]		PF寄存器低位
+ *hlw_8032[23]		检验和	hlw_8032[2]+....+hlw_8032[22]
+ */
 
 LOCAL void uart0_rx_intr_handler(void *para);
 
@@ -294,7 +325,9 @@ uart_test_rx()
 LOCAL void ICACHE_FLASH_ATTR ///////
 uart_recvTask(os_event_t *events)
 {
-
+	uint8 i,crc_in=0;
+	uint32 crc_out=0;
+	uint8 vul[100],last_sta;
     if(events->sig == 0){
     #if  UART_BUFF_EN  
         Uart_rx_buff_enq();
@@ -305,10 +338,54 @@ uart_recvTask(os_event_t *events)
 
         for(idx=0;idx<fifo_len;idx++) {
             d_tmp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
-            uart_tx_one_char(UART0, d_tmp);
+            hlw_8032[idx]=d_tmp;
+            //uart_tx_one_char(UART0, d_tmp);
         }
 
+        for(i=2;i<23;i++)
+		{
+			crc_out+=hlw_8032[i];
+		}
+		crc_out=crc_out&0x000000ff;
+		crc_in=hlw_8032[23];
+	   /* if(crc_in==crc_out)
+		{
+			if(hlw_8032[0]==0x55&&hlw_8032[1]==0x5A)
+			{
+				if(hlw_8032[20]&0x80!=last_sta&0x80)
+				{
+					pf++;
+					last_sta=hlw_8032[20];
+				}
+				voltage[0]=(hlw_8032[2]<<16)+(hlw_8032[3]<<8)+hlw_8032[4];
+				voltage[1]=(hlw_8032[5]<<16)+(hlw_8032[6]<<8)+hlw_8032[7];
+				if(voltage[1]!=0)
+				{
+					voltage[2]=(voltage[0]/voltage[1])*1.88;
+				}
+				current[0]=(hlw_8032[8]<<16)+(hlw_8032[9]<<8)+hlw_8032[10];
+				current[1]=(hlw_8032[11]<<16)+(hlw_8032[12]<<8)+hlw_8032[13];
+				if(current[1]!=0)
+				{
+					current[2]=(current[0]/current[1])*1;
+				}
+				power[0]=(hlw_8032[14]<<16)+(hlw_8032[15]<<8)+hlw_8032[16];
+				power[1]=(hlw_8032[17]<<16)+(hlw_8032[18]<<8)+hlw_8032[19];
+				if(power[1]!=0)
+				{
+					power[2]=(power[0]/power[1])*1.88*1;
+				}
+				pulse=(1/power[0])*(1/1.88)*3600*1000000000L;
+				 os_sprintf(vul,"xishu=%d,%d,%d,%d,%d,%d\r\nvul=%d,%d,%d\r\n",voltage[0],voltage[1],current[0],current[1],power[0],power[1],voltage[2],current[2],power[2]);
+						WIFI_UDP_SendNews(vul,os_strlen(vul));
+			}
+			else if(hlw_8032[0]&0xf0==0xf0)
+			{
+				//电流，电压，功率极小
+			}
+		}*/
 
+		WIFI_UDP_SendNews(hlw_8032,sizeof(hlw_8032));
 
         WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
         uart_rx_intr_enable(UART0);

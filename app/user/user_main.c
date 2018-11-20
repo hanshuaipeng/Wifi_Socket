@@ -1373,8 +1373,8 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 
 void user_init(void)
 {
-	uart_init(BIT_RATE_115200, BIT_RATE_115200);
-
+	uart_init(BIT_RATE_4800, BIT_RATE_115200);
+	system_uart_swap();
 	os_delay_us(60000);
 
    	os_sprintf(dev_sid,"%x%x",system_get_chip_id(),spi_flash_get_id());
