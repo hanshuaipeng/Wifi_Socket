@@ -27,7 +27,6 @@
 
 #define debug 0
 #define tcp_debug 	1
-#define smartconfig 0
 #define time_debug  0
 #define tcp_server  0
 

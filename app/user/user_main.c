@@ -136,11 +136,7 @@ static struct keys_param switch_param;
 static struct single_key_param *switch_signle;
 
 char temp_str[30];    // 临时子串，查找字符串相关
-#if smartconfig
-	uint8_t  lan_buf[200];
-	uint16_t lan_buf_len;
-	uint8 	 udp_sent_cnt = 0;
-#endif
+
 LOCAL os_timer_t pub_timer;;
 LOCAL os_timer_t check_ip_timer;
 

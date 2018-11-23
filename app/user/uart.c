@@ -327,7 +327,8 @@ uart_recvTask(os_event_t *events)
 {
 	uint8 i,crc_in=0;
 	uint32 crc_out=0;
-	uint8 vul[100],last_sta;
+	uint8 vul[100];
+	static uint8 last_sta=0;
     if(events->sig == 0){
     #if  UART_BUFF_EN  
         Uart_rx_buff_enq();
@@ -348,7 +349,7 @@ uart_recvTask(os_event_t *events)
 		}
 		crc_out=crc_out&0x000000ff;
 		crc_in=hlw_8032[23];
-	   /* if(crc_in==crc_out)
+	    if(crc_in==crc_out)
 		{
 			if(hlw_8032[0]==0x55&&hlw_8032[1]==0x5A)
 			{
@@ -376,16 +377,16 @@ uart_recvTask(os_event_t *events)
 					power[2]=(power[0]/power[1])*1.88*1;
 				}
 				pulse=(1/power[0])*(1/1.88)*3600*1000000000L;
-				 os_sprintf(vul,"xishu=%d,%d,%d,%d,%d,%d\r\nvul=%d,%d,%d\r\n",voltage[0],voltage[1],current[0],current[1],power[0],power[1],voltage[2],current[2],power[2]);
+				 os_sprintf(vul,"voltage=%d,current=%d,power=%d",voltage[2],current[2],power[2]);
 						WIFI_UDP_SendNews(vul,os_strlen(vul));
 			}
 			else if(hlw_8032[0]&0xf0==0xf0)
 			{
 				//电流，电压，功率极小
 			}
-		}*/
+		}
 
-		WIFI_UDP_SendNews(hlw_8032,sizeof(hlw_8032));
+		//WIFI_UDP_SendNews(hlw_8032,sizeof(hlw_8032));
 
         WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
         uart_rx_intr_enable(UART0);
