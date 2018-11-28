@@ -55,8 +55,8 @@
 #define RELAY_PIN_FUNC        	  FUNC_GPIO4
 #define RELAY_PIN_MUX         	  PERIPHS_IO_MUX_GPIO4_U
 
-#define Smart_LED_ON  GPIO_OUTPUT_SET(GPIO_ID_PIN(SMART_LED_PIN_NUM), 0);
-#define Smart_LED_OFF GPIO_OUTPUT_SET(GPIO_ID_PIN(SMART_LED_PIN_NUM), 1);
+#define Smart_LED_ON  GPIO_OUTPUT_SET(GPIO_ID_PIN(SMART_LED_PIN_NUM), 1);
+#define Smart_LED_OFF GPIO_OUTPUT_SET(GPIO_ID_PIN(SMART_LED_PIN_NUM), 0);
 
 #define RELAY_ON  GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_PIN_NUM), 1);
 #define RELAY_OFF GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_PIN_NUM), 0);
@@ -1088,12 +1088,6 @@ static void Switch_LongPress_Handler( void )
 		uint8 ip[10];
 #endif
 
-#if smartconfig
-		wifi_station_dhcpc_start();
-		smartconfig_set_type(SC_TYPE_ESPTOUCH_AIRKISS); //SC_TYPE_ESPTOUCH,SC_TYPE_AIRKISS,SC_TYPE_ESPTOUCH_AIRKISS
-		wifi_set_opmode(STATION_MODE);
-		smartconfig_start(smartconfig_done);
-#endif
 		Smart_LED_OFF;
 		long_pass_flag=1;
 		os_timer_disarm(&sntp_timer);

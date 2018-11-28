@@ -32,7 +32,7 @@
 
 
 
-#define SYS_VER  			"gp08-cz01-sw-v1.4"//°æ±¾ºÅ
+#define SYS_VER  			"gp08-cz01-sw-v2.0"//°æ±¾ºÅ
 #define HARD_VER  			"gp08-cz01-hw-v1.4"//°æ±¾ºÅ
 #define USER1BIN			"user1.4096.new.6.bin"
 #define USER2BIN			"user2.4096.new.6.bin"
