@@ -62,7 +62,6 @@
 #define RELAY_OFF GPIO_OUTPUT_SET(GPIO_ID_PIN(RELAY_PIN_NUM), 0);
 LOCAL os_timer_t flash_light_timer;
 
-
 uint8 mqtt_buff[200];				//mqtt接收数据缓存
 uint8 pub_topic[50],sub_topic[50];	//mqtt发布和订阅主题
 uint8 service_topic[50];			//向服务器返回状态主题
@@ -71,6 +70,7 @@ uint8 on_off_flag=0;
 uint8 dev_sta=0;					//设备状态
 extern uint8 long_pass_flag;				//长按标志
 
+uint8 read_w;//20s读取pf取反次数时间到
 uint8 send_serv;
 
 extern uint8 tcp_send;
@@ -81,6 +81,7 @@ uint8 dev_sid[15];					//记录设备SID
 
 
 LOCAL os_timer_t serv_timer;
+LOCAL os_timer_t power_check_timer;
 /*************************************
  *倒计时相关变量
  */
@@ -99,8 +100,6 @@ uint8 cycle=0;
 
 typedef struct
 {
-	uint16 tm_year;
-	uint8 tm_mon;
 	uint8 tm_day;
 	uint8 tm_hour;
 	uint8 tm_min;
@@ -239,63 +238,6 @@ void sntpfn()
 		os_strncpy(chmin,current_time+14,2);//分
 		os_strncpy(chhour,current_time+11,2);//时
 		os_strncpy(chwday,current_time,3);//周
-#if 0
-		os_strncpy(chmday,current_time+8,2);//天
-		os_strncpy(chmon,current_time+4,3);//月
-		os_strncpy(chyear,current_time+20,4);//年
-
-		os_printf("current time : %s\n", current_time);
-
-		//月份转换
-		if(strcmp(chmon,"Jan")==0)
-		{
-			now_timedate.tm_mon=1;
-		}
-		else if(strcmp(chmon,"Feb")==0)
-		{
-			now_timedate.tm_mon=2;
-		}
-		else if(strcmp(chmon,"Mar")==0)
-		{
-			now_timedate.tm_mon=3;
-		}
-		else if(strcmp(chmon,"Apr")==0)
-		{
-			now_timedate.tm_mon=4;
-		}
-		else if(strcmp(chmon,"May")==0)
-		{
-			now_timedate.tm_mon=5;
-		}
-		else if(strcmp(chmon,"Jun")==0)
-		{
-			now_timedate.tm_mon=6;
-		}
-		else if(strcmp(chmon,"Jul")==0)
-		{
-			now_timedate.tm_mon=7;
-		}
-		else if(strcmp(chmon,"Aug")==0)
-		{
-			now_timedate.tm_mon=8;
-		}
-		else if(strcmp(chmon,"Sep")==0)
-		{
-			now_timedate.tm_mon=9;
-		}
-		else if(strcmp(chmon,"Oct")==0)
-		{
-			now_timedate.tm_mon=10;
-		}
-		else if(strcmp(chmon,"Nov")==0)
-		{
-			now_timedate.tm_mon=11;
-		}
-		else if(strcmp(chmon,"Dec")==0)
-		{
-			now_timedate.tm_mon=12;
-		}
-#endif
 
 		now_timedate.tm_hour=(chhour[0]-'0')*10+(chhour[1]-'0');
 		now_timedate.tm_min=(chmin[0]-'0')*10+(chmin[1]-'0');
@@ -341,6 +283,7 @@ void mqttConnectedCb(uint32_t *args)
 	os_sprintf(init_buff,"{\"cmd\":\"i am ok\",\"dev\":\"socket\",\"sys_ver\":\"%s\",\"hard_ver\":\"%s\",\"sid\":\"%s\"}"
 			,SYS_VER,HARD_VER,dev_sid);
     MQTT_Client* client = (MQTT_Client*)args;
+
 #if 1
     INFO("MQTT: Connected\r\n");
 #endif
@@ -352,7 +295,6 @@ void mqttConnectedCb(uint32_t *args)
 void mqttDisconnectedCb(uint32_t *args)
 {
     MQTT_Client* client = (MQTT_Client*)args;
-
 #if 1
     INFO("MQTT: Disconnected\r\n");
 #endif
@@ -361,8 +303,6 @@ void mqttDisconnectedCb(uint32_t *args)
 void mqttPublishedCb(uint32_t *args)
 {
     MQTT_Client* client = (MQTT_Client*)args;
-
-    pub_flag=0;
     os_memset(mqtt_buff,0,sizeof(mqtt_buff));
 #if 1
     INFO("MQTT: Published\r\n");
@@ -398,7 +338,6 @@ void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const cha
 
     os_memcpy(topicBuf, topic, topic_len);
     topicBuf[topic_len] = 0;
-
     if(data_len>300)
     {
     	for(len=0;len<data_len/2;len++)
@@ -611,7 +550,6 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 	if(pub_flag==1)
 	{
-		pub_flag=0;
 		os_memset(pub_buff,0,os_strlen(pub_buff));
 		if(strstr(mqtt_buff,dev_sid)!=NULL)
 		{
@@ -883,11 +821,6 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				}
 				on_off_flag=1;
 			}
-/*
- * 	uint16 cycle_on_min=0,cycle_off_min=0;
-	uint8 cycle_on_sec=0,cycle_off_sec=0;
-	uint8 cycle;
- */
 /********************************循环开关******************************************/
 			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_cycle\"")!=NULL)
 			{
@@ -970,6 +903,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
 		}
+		pub_flag=0;
 	}
 
 	if(on_off_flag==1)
@@ -1002,7 +936,10 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 			//****************************************************************/
 		}
 		else
+		{
 			MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
+		}
+
 
 		save_flash(CFG_LOCATION + 4,(uint32 *)&dev_sta);
 		on_off_flag=0;
@@ -1307,7 +1244,16 @@ user_rf_cal_sector_set(void)
     return rf_cal_sec;
 }
 
-
+void ICACHE_FLASH_ATTR power_check_timer_callback()
+{
+	static uint8 t=0;
+	t++;
+	if(t==20)
+	{
+		read_w=1;
+		t=0;
+	}
+}
 
 void  ICACHE_FLASH_ATTR to_scan(void)
 {
@@ -1358,6 +1304,10 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 	os_timer_setfn(&pub_timer, (os_timer_func_t *)pub_timer_callback, NULL);
 	os_timer_arm(&pub_timer, 200, 1);//200ms
 
+	os_timer_disarm(&power_check_timer);
+	os_timer_setfn(&power_check_timer, (os_timer_func_t *)power_check_timer_callback, NULL);
+	os_timer_arm(&power_check_timer, 1000, 1);//1000ms
+
 }
 /* Create a bunch of objects as demonstration. */
 
@@ -1377,8 +1327,7 @@ void user_init(void)
 
 	gpio_init();
 
-	//spi_flash_erase_sector(CFG_LOCATION + 5);
-	load_flash(CFG_LOCATION + 4,(uint32 *)&dev_sta);
+	load_flash((CFG_LOCATION + 4),(uint32*)&dev_sta);
 
 	on_off_flag=1;
 	spi_flash_read((CFG_LOCATION + 5) * SPI_FLASH_SEC_SIZE,(uint32 *)list, sizeof(list));

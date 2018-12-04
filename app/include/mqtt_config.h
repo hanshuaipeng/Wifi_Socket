@@ -40,7 +40,7 @@ typedef enum{
 #define MQTT_SSL_ENABLE 		    //* Please don't change or if you know what you doing */
 
 #define STA_TYPE AUTH_WPA2_PSK
-#define QUEUE_BUFFER_SIZE                 4096
+#define QUEUE_BUFFER_SIZE                 2048
 
 //#define PROTOCOL_NAMEv31    /*MQTT version 3.1 compatible with Mosquitto v0.15*/
 #define PROTOCOL_NAMEv311            /*MQTT version 3.11 compatible with https://eclipse.org/paho/clients/testing/*/

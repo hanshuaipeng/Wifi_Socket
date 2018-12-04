@@ -46,13 +46,13 @@ os_event_t    uart_recvTaskQueue[uart_recvTaskQueueLen];
 #define DBG  
 #define DBG1 uart1_sendStr_no_wait
 #define DBG2 os_printf
-
-uint32 pf=0;//BIT7取反次数
-uint32 pulse=0;//一度电脉冲数量
+extern uint8 pub_flag;
+extern MQTT_Client mqttClient;
+extern uint8 dev_sid[15];
+extern uint8 pub_topic[50];
+extern uint8 read_w;
 uint8 hlw_8032[24];
-uint32 voltage[3];//voltage[0]电压参数， voltage[1]电压
-uint32 current[3];//current[0]电流参数，current[1]电流
-uint32 power[3];// power[0]功率参数，power[1]功率
+uint8 uart_finish=0;
 /*hlw_8032[0]		状态寄存器;
  *hlw_8032[1]		检测寄存器;
  *hlw_8032[2]		电压参数寄存器高位voltage[0]=(hlw_8032[2]<<16)+(hlw_8032[3]<<8)+hlw_8032[4]
@@ -328,7 +328,18 @@ uart_recvTask(os_event_t *events)
 	uint8 i,crc_in=0;
 	uint32 crc_out=0;
 	uint8 vul[100];
-	static uint8 last_sta=0;
+	uint32 voltage[2];//voltage[0]电压参数， voltage[1]电压
+	uint32 current[2];//current[0]电流参数，current[1]电流
+	uint32 power[2];// power[0]功率参数，power[1]功率
+	uint8 vol,cur;
+	uint16 pf_reg=0;
+	static uint8 k=0;//BIT7取反次数
+	uint32 pulse=0;//一度电脉冲数量
+	uint32 pf_cnt=0;
+	static uint16 w=0;
+	static uint8 last_sta=0,t=0,last_p=0,last_w=0,err_p=0,err_w=0;
+	static uint16 add=0;
+	uint16 p=0;
     if(events->sig == 0){
     #if  UART_BUFF_EN  
         Uart_rx_buff_enq();
@@ -336,61 +347,108 @@ uart_recvTask(os_event_t *events)
         uint8 fifo_len = (READ_PERI_REG(UART_STATUS(UART0))>>UART_RXFIFO_CNT_S)&UART_RXFIFO_CNT;
         uint8 d_tmp = 0;
         uint8 idx=0;
+		for(idx=0;idx<fifo_len;idx++) {
+		d_tmp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
 
-        for(idx=0;idx<fifo_len;idx++) {
-            d_tmp = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
-            hlw_8032[idx]=d_tmp;
-            //uart_tx_one_char(UART0, d_tmp);
-        }
+		hlw_8032[idx]=d_tmp;
+		//uart_tx_one_char(UART0, d_tmp);
+		}
+        WRITE_PERI_REG(UART_INT_CLR(UART0), UART_FRM_ERR_INT_CLR|UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
+        uart_rx_intr_enable(UART0);
 
-        for(i=2;i<23;i++)
+		for(i=2;i<23;i++)
 		{
 			crc_out+=hlw_8032[i];
 		}
 		crc_out=crc_out&0x000000ff;
 		crc_in=hlw_8032[23];
-	    if(crc_in==crc_out)
+		if(crc_in==crc_out)
 		{
+
 			if(hlw_8032[0]==0x55&&hlw_8032[1]==0x5A)
 			{
-				if(hlw_8032[20]&0x80!=last_sta&0x80)
+				if((hlw_8032[20]&0x80)!=(last_sta&0x80))
 				{
-					pf++;
+					k+=1;
 					last_sta=hlw_8032[20];
 				}
+				pf_reg=(hlw_8032[21]<<8)+hlw_8032[22];
 				voltage[0]=(hlw_8032[2]<<16)+(hlw_8032[3]<<8)+hlw_8032[4];
 				voltage[1]=(hlw_8032[5]<<16)+(hlw_8032[6]<<8)+hlw_8032[7];
 				if(voltage[1]!=0)
 				{
-					voltage[2]=(voltage[0]/voltage[1])*1.88;
+					vol=(voltage[0]/voltage[1])*1.88;
 				}
 				current[0]=(hlw_8032[8]<<16)+(hlw_8032[9]<<8)+hlw_8032[10];
 				current[1]=(hlw_8032[11]<<16)+(hlw_8032[12]<<8)+hlw_8032[13];
 				if(current[1]!=0)
 				{
-					current[2]=(current[0]/current[1])*1;
+					cur=(current[0]/current[1])*1;
 				}
 				power[0]=(hlw_8032[14]<<16)+(hlw_8032[15]<<8)+hlw_8032[16];
 				power[1]=(hlw_8032[17]<<16)+(hlw_8032[18]<<8)+hlw_8032[19];
 				if(power[1]!=0)
 				{
-					power[2]=(power[0]/power[1])*1.88*1;
+					p=(power[0]/power[1])*1.88*1;
 				}
-				pulse=(1/power[0])*(1/1.88)*3600*1000000000L;
-				 os_sprintf(vul,"voltage=%d,current=%d,power=%d",voltage[2],current[2],power[2]);
-						WIFI_UDP_SendNews(vul,os_strlen(vul));
+
+				if(read_w==1)
+				{
+					pulse=(100000000L/power[0])*(3600/188);//1 度电的脉冲数量 = (1/功率参数寄器)×(1/(电压系数 × 电流系数))× 1000000000 × 3600
+					pf_cnt=k*65535+pf_reg;
+					w=pf_cnt/pulse;						//当前电量(KW.h) = PFcnt /1 度电的脉冲个数,此处算的单位为W.h
+					read_w=0;
+				}
+				//WIFI_UDP_SendNews(hlw_8032,24);
+				//os_sprintf(vul,"{\"cmd\":\"wifi_socket_power_check\",\"power\":%d,\"w\":%d,\"sid\":\"%s\"}",p,w,dev_sid);
+				//os_sprintf(vul,"voltage=%d,current=%d,power=%d",voltage[2],current[2],power[2]);
+				//MQTT_Publish(&mqttClient,  pub_topic,vul, os_strlen(vul), 0, 0);
+				//WIFI_UDP_SendNews(vul,os_strlen(vul));
+				add+=p;
+				t++;
+				if(t==20)
+				{
+					p=add*0.05;
+					t=0;
+					add=0;
+					if(p>last_p)
+					{
+						err_p=p-last_p;
+					}
+					else if(p<last_p)
+						err_p=last_p-p;
+					if(w>last_w)
+					{
+						err_w=w-last_w;
+					}
+					else if(w<last_w)
+						err_w=last_w-w;
+				}
 			}
 			else if(hlw_8032[0]&0xf0==0xf0)
 			{
-				//电流，电压，功率极小
+				p=0;
+				/*os_sprintf(vul,"{\"cmd\":\"wifi_socket_power_check\",\"power\":%d,\"w\":%d,\"sid\":\"%s\"}",p,w,dev_sid);
+				if(pub_flag==0)
+				{
+					MQTT_Publish(&mqttClient,  pub_topic,vul, os_strlen(vul), 0, 0);
+					//WIFI_UDP_SendNews(vul,os_strlen(vul));
+					last_p=p;
+				}*/
+			}
+			if(err_p>=2||err_w>=10)
+			{
+				os_sprintf(vul,"{\"cmd\":\"wifi_socket_power_check\",\"power\":%d,\"w\":%d,\"sid\":\"%s\"}",p,w,dev_sid);
+				err_p=0;
+				err_w=0;
+				if(pub_flag==0)
+				{
+					MQTT_Publish(&mqttClient,  pub_topic,vul, os_strlen(vul), 0, 0);
+					WIFI_UDP_SendNews(vul,os_strlen(vul));
+					last_p=p;
+				}
 			}
 		}
-
-		//WIFI_UDP_SendNews(hlw_8032,sizeof(hlw_8032));
-
-        WRITE_PERI_REG(UART_INT_CLR(UART0), UART_RXFIFO_FULL_INT_CLR|UART_RXFIFO_TOUT_INT_CLR);
-        uart_rx_intr_enable(UART0);
-
 
     #endif
     }else if(events->sig == 1){
