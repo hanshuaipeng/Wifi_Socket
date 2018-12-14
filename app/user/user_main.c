@@ -74,11 +74,11 @@ uint8 read_w;//20s读取pf取反次数时间到
 uint8 send_serv;
 
 extern uint8 tcp_send;
-
+extern uint8 stop_flag;
 uint8 local_ip[15];					//记录本地IP，用于station模式的tcp service
 
 uint8 dev_sid[15];					//记录设备SID
-
+uint8 save_data[12];
 
 LOCAL os_timer_t serv_timer;
 LOCAL os_timer_t power_check_timer;
@@ -354,23 +354,38 @@ void mqttDataCb(uint32_t *args, const char* topic, uint32_t topic_len, const cha
 			{
     			switch(dataBuf[3])
     			{
-					case 1:
+					case 0x11:
 						spi_flash_erase_sector(0x77);
 						if(spi_flash_write(0x77000,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
 						{
 							//system_restart();
+							//os_printf("1-1\r\n");
 						}
 						break;
-					case 2:
+					case 0x12:
+						if(spi_flash_write(0x77000+500,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
+						{
+							//system_restart();
+							//os_printf("1-1\r\n");
+						}
+						break;
+					case 0x21:
 						spi_flash_erase_sector(0x78);
 						if(spi_flash_write(0x78000,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
 						{
-							//system_restart();
+							//os_printf("2-1\r\n");
 						}
 						break;
-					case 3:
-						if(spi_flash_write(0x78000+900,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
+					case 0x22:
+						if(spi_flash_write(0x78000+500,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
 						{
+							//os_printf("2-2\r\n");
+						}
+						break;
+					case 0x23:
+						if(spi_flash_write(0x78000+1000,(uint32*)dataBuf+1, len)==SPI_FLASH_RESULT_OK)
+						{
+							//os_printf("2-3\r\n");
 							system_restart();
 						}
 						break;
@@ -443,11 +458,11 @@ void  ICACHE_FLASH_ATTR onoff_timer_callback()
 void ICACHE_FLASH_ATTR  save_flash(uint32 des_addr,uint32* data)
 {
 	spi_flash_erase_sector(des_addr);
-	spi_flash_write(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data));
+	spi_flash_write(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data)*4);
 }
 void  ICACHE_FLASH_ATTR load_flash(uint32 des_addr,uint32* data)
 {
-	spi_flash_read(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data));
+	spi_flash_read(des_addr * SPI_FLASH_SEC_SIZE,data, sizeof(data)*4);
 }
 
 /***********************定时器******************************/
@@ -547,7 +562,15 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 	static uint8 state[10];
 	static uint8 ip[4]={192,168,1,3};
 	os_memset(state,0,os_strlen(state));
-
+	/*save_data[0]=dev_sta;
+	save_data[1]=stop_flag;
+	save_data[2]=cycle;
+	save_data[3]=cycle_on_min>>8;
+	save_data[4]=cycle_on_min;
+	save_data[5]=cycle_on_sec;
+	save_data[6]=cycle_off_min>>8;
+	save_data[7]=cycle_off_min;
+	save_data[8]=cycle_off_sec;*/
 	if(pub_flag==1)
 	{
 		os_memset(pub_buff,0,os_strlen(pub_buff));
@@ -831,12 +854,20 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				cycle_on_min=shi*60+fen;
 				cycle_on_sec=miao;
 
+				save_data[3]=shi;
+				save_data[4]=fen;
+				save_data[5]=miao;
+
 				frist_pos=GetSubStrPos(mqtt_buff,"\"off_time\":");
 				shi=(mqtt_buff[frist_pos+12]-'0')*10+(mqtt_buff[frist_pos+13]-'0');
 				fen=(mqtt_buff[frist_pos+15]-'0')*10+(mqtt_buff[frist_pos+16]-'0');
 				miao=(mqtt_buff[frist_pos+18]-'0')*10+(mqtt_buff[frist_pos+19]-'0');
 				cycle_off_min=shi*60+fen;
 				cycle_off_sec=miao;
+
+				save_data[6]=shi;
+				save_data[7]=fen;
+				save_data[8]=miao;
 
 				if(dev_sta==1)//如果当前状态是开，则初始化关闭时间
 				{
@@ -864,7 +895,8 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 					os_timer_disarm(&onoff_timer);
 					os_strcpy(state,"off");
 				}
-
+				save_data[2]=cycle;
+				save_flash(CFG_LOCATION + 4,(uint32 *)save_data);
 				os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_cycle_ack\",\"state\":\"%s\",\"on_time\":\"%02d,%02d,%02d\",\"off_time\":\"%02d,%02d,%02d\",\"sid\":\"%s\"}",
 						state,cycle_on_min/60,cycle_on_min%60,cycle_on_sec,cycle_off_min/60,cycle_off_min%60,cycle_off_sec,dev_sid);
 				if(tcp_send==1)
@@ -902,6 +934,13 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 				else
 					MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 			}
+			else if(strstr(mqtt_buff,"\"cmd\":\"wifi_socket_stop\"")!=NULL)
+			{
+				frist_pos=GetSubStrPos(mqtt_buff,"\"stop_flag\":");
+				stop_flag=mqtt_buff[frist_pos+12]-'0';
+				save_data[1]=stop_flag;
+				on_off_flag=1;
+			}
 		}
 		pub_flag=0;
 	}
@@ -918,8 +957,8 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 			os_strcpy(state,"\"on\"");
 			RELAY_ON;
 		}
-		os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":%s,\"sys_ver\":\"%s\",\"hard_ver\":\"%s\",\"sid\":\"%s\"}",
-				state,SYS_VER,HARD_VER,dev_sid);
+		os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":%s,\"stop_flag\":%d,\"sys_ver\":\"%s\",\"hard_ver\":\"%s\",\"sid\":\"%s\"}",
+				state,stop_flag,SYS_VER,HARD_VER,dev_sid);
 		if(tcp_send==1)
 		{
 			tcp_send=0;
@@ -940,8 +979,8 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 			MQTT_Publish(&mqttClient,  pub_topic,pub_buff, os_strlen(pub_buff), 0, 0);
 		}
 
-
-		save_flash(CFG_LOCATION + 4,(uint32 *)&dev_sta);
+		save_data[0]=dev_sta;
+		save_flash(CFG_LOCATION + 4,(uint32 *)save_data);
 		on_off_flag=0;
 	}
 	if(send_serv==1)
@@ -1299,6 +1338,51 @@ void  ICACHE_FLASH_ATTR to_scan(void)
 			}
 		}
 	}
+	dev_sta=save_data[0];
+	stop_flag=save_data[1];
+	cycle=save_data[2];
+	cycle_on_min=save_data[3]*60+save_data[4];
+	cycle_on_sec=save_data[5];
+	cycle_off_min=save_data[6]*60+save_data[7];
+	cycle_off_sec=save_data[8];
+	if(cycle_on_min>1440)
+	{
+		cycle_on_min=0;
+	}
+	if(cycle_on_sec>60)
+	{
+		cycle_on_sec=1;
+	}
+	if(cycle_off_min>1440)
+	{
+		cycle_off_min=0;
+	}
+	if(cycle_off_sec>60)
+	{
+		cycle_off_sec=1;
+	}
+	if(stop_flag!=1)
+	{
+		stop_flag=0;
+	}
+
+	if(cycle==1)
+	{
+		if(dev_sta==1)//如果当前状态是开，则初始化关闭时间
+		{
+			min=cycle_off_min;
+			sec=cycle_off_sec;
+		}
+		else
+		{
+			min=cycle_on_min;
+			sec=cycle_on_sec;
+		}
+		os_timer_disarm(&onoff_timer);
+		os_timer_setfn(&onoff_timer, (os_timer_func_t *)onoff_timer_callback, NULL);
+		os_timer_arm(&onoff_timer, 1000, 1);//1000ms
+	}
+	on_off_flag=1;
 	/***************************开启任务**********************************/
 	os_timer_disarm(&pub_timer);
 	os_timer_setfn(&pub_timer, (os_timer_func_t *)pub_timer_callback, NULL);
@@ -1327,9 +1411,8 @@ void user_init(void)
 
 	gpio_init();
 
-	load_flash((CFG_LOCATION + 4),(uint32*)&dev_sta);
+	load_flash((CFG_LOCATION + 4),(uint32*)save_data);
 
-	on_off_flag=1;
 	spi_flash_read((CFG_LOCATION + 5) * SPI_FLASH_SEC_SIZE,(uint32 *)list, sizeof(list));
 #if 0
 	os_printf("list=%s\r\n",list);
