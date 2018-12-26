@@ -33,7 +33,7 @@
 
 
 #define SYS_VER  			"gp08-cz01-sw-v2.2"//°æ±¾ºÅ
-#define HARD_VER  			"gp08-cz01-hw-v1.4"//°æ±¾ºÅ
+#define HARD_VER  			"gp08-cz01-hw-v1.5"//°æ±¾ºÅ
 #define USER1BIN			"user1.4096.new.6.bin"
 #define USER2BIN			"user2.4096.new.6.bin"
 //void ICACHE_FLASH_ATTR smartconfig_done(sc_status status, void *pdata);

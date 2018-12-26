@@ -947,6 +947,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 	if(on_off_flag==1)
 	{
+		ETS_UART_INTR_DISABLE();
 		if(dev_sta==0)
 		{
 			RELAY_OFF;
@@ -982,6 +983,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 		save_data[0]=dev_sta;
 		save_flash(CFG_LOCATION + 4,(uint32 *)save_data);
 		on_off_flag=0;
+		ETS_UART_INTR_ENABLE();
 	}
 	if(send_serv==1)
 	{
@@ -1066,6 +1068,7 @@ static void Switch_LongPress_Handler( void )
 
 		Smart_LED_OFF;
 		long_pass_flag=1;
+		ETS_UART_INTR_DISABLE();
 		os_timer_disarm(&sntp_timer);
 		os_timer_disarm(&check_ip_timer);
 /****************************配网指示灯开始闪烁*****************************************/
@@ -1202,6 +1205,7 @@ void  ICACHE_FLASH_ATTR check_ip_timer_callback()
 		if(flag==1)
 		{
 			flag=0;
+
 			wifi_set_opmode(0x01);
 			 my_sntp_init();//获取网络时间
 #if tcp_server

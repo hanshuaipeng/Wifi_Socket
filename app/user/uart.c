@@ -361,7 +361,7 @@ uart_recvTask(os_event_t *events)
 		crc_in=hlw_8032[23];
 		if(crc_in==crc_out)
 		{
-			WIFI_UDP_SendNews(hlw_8032,24);
+			//WIFI_UDP_SendNews(hlw_8032,24);
 			if(hlw_8032[0]==0x55)
 			{
 				if((hlw_8032[20]&0x80)!=(last_sta&0x80))
