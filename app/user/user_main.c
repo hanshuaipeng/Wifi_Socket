@@ -72,7 +72,6 @@ extern uint8 long_pass_flag;				//长按标志
 
 uint8 read_w;//20s读取pf取反次数时间到
 uint8 send_serv;
-
 extern uint8 tcp_send;
 extern uint8 stop_flag;
 uint8 local_ip[15];					//记录本地IP，用于station模式的tcp service
@@ -947,7 +946,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 
 	if(on_off_flag==1)
 	{
-		ETS_UART_INTR_DISABLE();
+
 		if(dev_sta==0)
 		{
 			RELAY_OFF;
@@ -957,6 +956,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 		{
 			os_strcpy(state,"\"on\"");
 			RELAY_ON;
+			ETS_UART_INTR_ENABLE();
 		}
 		os_sprintf(pub_buff,"{\"cmd\":\"wifi_socket_ack\",\"state\":%s,\"stop_flag\":%d,\"sys_ver\":\"%s\",\"hard_ver\":\"%s\",\"sid\":\"%s\"}",
 				state,stop_flag,SYS_VER,HARD_VER,dev_sid);
@@ -983,7 +983,7 @@ void ICACHE_FLASH_ATTR  pub_timer_callback()
 		save_data[0]=dev_sta;
 		save_flash(CFG_LOCATION + 4,(uint32 *)save_data);
 		on_off_flag=0;
-		ETS_UART_INTR_ENABLE();
+
 	}
 	if(send_serv==1)
 	{

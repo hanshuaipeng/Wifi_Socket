@@ -54,6 +54,7 @@ extern uint8 read_w;
 extern uint8 dev_sta,on_off_flag;
 uint8 stop_flag=0;
 uint8 hlw_8032[24];
+
 /*hlw_8032[0]		×´Ì¬¼Ä´æÆ÷;
  *hlw_8032[1]		¼ì²â¼Ä´æÆ÷;
  *hlw_8032[2]		µçÑ¹²ÎÊı¼Ä´æÆ÷¸ßÎ»voltage[0]=(hlw_8032[2]<<16)+(hlw_8032[3]<<8)+hlw_8032[4]
@@ -433,6 +434,11 @@ uart_recvTask(os_event_t *events)
 			{
 				err_p=0;
 				err_w=0;
+				if(dev_sta==0)
+				{
+					p=0;
+					ETS_UART_INTR_DISABLE();
+				}
 				os_sprintf(vul,"{\"cmd\":\"wifi_socket_power_check\",\"power\":%d,\"w\":%d,\"sid\":\"%s\"}",p,w,dev_sid);
 				if(pub_flag==0)
 				{
